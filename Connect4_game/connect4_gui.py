@@ -1,64 +1,69 @@
+"""
+Connect 4 GUI - Modern Fullscreen Design
+Features:
+- Fullscreen on launch
+- 0.5s AI thinking delay for UX
+- Adaptive Minimax learning integration
+"""
+
 import tkinter as tk
-from tkinter import messagebox
 from tkinter import ttk
+import sys
+import os
+
+# Add src directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
 from minimax_agent import MinimaxAgent
-#from rl_agent import RLAgent
-#from ml_agent import MLAgent
+from adaptive_minimax import EvolvingMinimaxAgent
+from board import Board
+
 
 class Connect4Game:
+    """Game logic wrapper that's compatible with both GUI and agents"""
     def __init__(self):
         self.rows = 6
         self.cols = 7
-        self.board = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
-        self.turn = 1  # 1 for Player 1 (Red), 2 for Player 2 (Yellow)
+        self.board = [[0] * self.cols for _ in range(self.rows)]
+        self.turn = 1
         self.game_over = False
 
     def drop_piece(self, col):
-        if self.game_over:
-            return False
+        if self.game_over or col < 0 or col >= self.cols:
+            return None, None
         
         for row in range(self.rows - 1, -1, -1):
             if self.board[row][col] == 0:
                 self.board[row][col] = self.turn
-                winning_pieces = self.check_win(row, col)
-                if winning_pieces:
+                win_cells = self._check_win(row, col)
+                if win_cells:
                     self.game_over = True
-                    return "WIN", winning_pieces
-                if self.check_draw():
+                    return "WIN", win_cells
+                if self._is_draw():
                     self.game_over = True
                     return "DRAW", None
-                self.turn = 3 - self.turn  # Switch player (1 -> 2, 2 -> 1)
-                return True, None
-        return False, None  # Column is full
+                self.turn = 3 - self.turn
+                return "OK", None
+        return None, None
 
-    def check_win(self, row, col):
+    def _check_win(self, row, col):
         player = self.board[row][col]
-        
-        # Directions: horizontal, vertical, diagonal /, diagonal \
         directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
         
         for dr, dc in directions:
-            winning_pieces = [(row, col)]
-            # Check positive direction
-            for i in range(1, 4):
-                r, c = row + dr * i, col + dc * i
-                if 0 <= r < self.rows and 0 <= c < self.cols and self.board[r][c] == player:
-                    winning_pieces.append((r, c))
-                else:
-                    break
-            # Check negative direction
-            for i in range(1, 4):
-                r, c = row - dr * i, col - dc * i
-                if 0 <= r < self.rows and 0 <= c < self.cols and self.board[r][c] == player:
-                    winning_pieces.append((r, c))
-                else:
-                    break
-            
-            if len(winning_pieces) >= 4:
-                return winning_pieces
+            cells = [(row, col)]
+            for sign in [1, -1]:
+                for i in range(1, 4):
+                    r, c = row + dr * i * sign, col + dc * i * sign
+                    if 0 <= r < self.rows and 0 <= c < self.cols and self.board[r][c] == player:
+                        cells.append((r, c))
+                    else:
+                        break
+            if len(cells) >= 4:
+                return cells
         return None
 
-    def check_draw(self):
+    def _is_draw(self):
         return all(self.board[0][c] != 0 for c in range(self.cols))
 
     def getValidMoves(self):
@@ -67,12 +72,12 @@ class Connect4Game:
     def checkWinState(self):
         for r in range(self.rows):
             for c in range(self.cols):
-                if self.board[r][c] != 0 and self.check_win(r, c):
+                if self.board[r][c] != 0 and self._check_win(r, c):
                     return self.board[r][c]
         return 0
 
     def checkDrawState(self):
-        return self.check_draw()
+        return self._is_draw() and self.checkWinState() == 0
 
     def copy(self):
         new_game = Connect4Game()
@@ -82,402 +87,474 @@ class Connect4Game:
         return new_game
 
     def reset(self):
-        self.board = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
+        self.board = [[0] * self.cols for _ in range(self.rows)]
         self.turn = 1
         self.game_over = False
 
+
 class Connect4GUI:
+    # Constants
+    AI_DELAY = 500  # 0.5 seconds delay for AI moves
+    
+    # Color Scheme - High Contrast Dark Theme
+    COLORS = {
+        'bg_dark': '#1a1a2e',       # Deep navy background
+        'bg_panel': '#16213e',      # Panel background
+        'board_bg': '#0f3460',      # Board frame - darker blue
+        'slot_empty': '#1a1a2e',    # Empty slots - very dark
+        'p1': '#e94560',            # Bright Red
+        'p1_light': '#ff6b6b',
+        'p2': '#f1c40f',            # Bright Yellow
+        'p2_light': '#f39c12',
+        'text': '#ffffff',          # Pure white for maximum readability
+        'text_dim': '#a0a0a0',      # Light gray
+        'accent': '#3498db',        # Bright blue for buttons
+        'success': '#2ecc71',       # Bright green
+        'border': '#4a4a6a',
+        'btn_text': '#ffffff',      # White button text
+    }
+
     def __init__(self, root):
         self.root = root
         self.root.title("Connect 4")
+        
+        # Fullscreen immediately
         self.root.attributes('-fullscreen', True)
+        self.root.configure(bg=self.COLORS['bg_dark'])
         
-        # Modern Color Palette
-        self.colors = {
-            'bg': "#1a1a2e",        # Dark Navy Background
-            'board': "#16213e",     # Slightly lighter navy for board container
-            'slot_empty': "#0f3460",# Dark Blue for empty slots
-            'p1': "#e94560",        # Neon Red/Pink
-            'p2': "#fcdab7",        # Soft Yellow/Beige
-            'text': "#ffffff",      # White
-            'accent': "#e94560",    # Accent color
-            'button': "#0f3460",    # Button background
-            'button_hover': "#16213e"
-        }
+        # Escape to exit fullscreen
+        self.root.bind('<Escape>', lambda e: self.root.attributes('-fullscreen', False))
+        self.root.bind('<F11>', lambda e: self.root.attributes('-fullscreen', 
+                                                               not self.root.attributes('-fullscreen')))
         
-        self.root.configure(bg=self.colors['bg'])
+        # Get screen dimensions
+        self.root.update_idletasks()
+        self.screen_w = self.root.winfo_screenwidth()
+        self.screen_h = self.root.winfo_screenheight()
         
-        # Configure Styles
-        self.style = ttk.Style()
-        self.style.theme_use('clam')
+        # Calculate board dimensions (responsive - ensure fits on screen)
+        # Leave room for header (100px) and footer (80px)
+        available_h = self.screen_h - 180
+        available_w = self.screen_w - 100
+        self.cell_size = min(available_w // 7, available_h // 6, 100)  # Cap at 100px
+        self.radius = int(self.cell_size * 0.40)
+        self.board_w = 7 * self.cell_size
+        self.board_h = 6 * self.cell_size
         
-        self.style.configure("TFrame", background=self.colors['bg'])
-        self.style.configure("TLabel", background=self.colors['bg'], foreground=self.colors['text'], font=('Helvetica', 16))
-        self.style.configure("Header.TLabel", font=('Helvetica', 48, 'bold'), foreground=self.colors['accent'])
-        self.style.configure("SubHeader.TLabel", font=('Helvetica', 24), foreground=self.colors['text'])
-        
-        self.style.configure("GameBtn.TButton", 
-                           font=('Helvetica', 14, 'bold'), 
-                           background=self.colors['button'], 
-                           foreground=self.colors['text'],
-                           borderwidth=0,
-                           focuscolor='none')
-        
-        self.style.map("GameBtn.TButton",
-                     background=[('active', self.colors['button_hover'])],
-                     foreground=[('active', self.colors['accent'])])
-        
-        self.style.configure("TMenubutton", 
-                           background=self.colors['button'], 
-                           foreground=self.colors['text'],
-                           font=('Helvetica', 12))
-
+        # Game state
         self.game = Connect4Game()
-        
-        # Screen dimensions
-        self.screen_width = self.root.winfo_screenwidth()
-        self.screen_height = self.root.winfo_screenheight()
-        
-        # Calculate responsive board size
-        # We want the board to take up about 60-70% of screen height
-        self.cell_size = int(min(self.screen_width * 0.8 / 7, self.screen_height * 0.7 / 6))
-        self.radius = int(self.cell_size * 0.4)
-        
-        self.board_width = 7 * self.cell_size
-        self.board_height = 6 * self.cell_size
-        self.offset_x = (self.screen_width - self.board_width) // 2
-        self.offset_y = (self.screen_height - self.board_height) // 2 # Centered vertically
-        
         self.players = [None, None]
-        self.player_types = ["Human", "Minimax", "RL", "ML"]
-        
-        # Main Container
-        self.main_container = ttk.Frame(root)
-        self.main_container.pack(expand=True, fill='both')
-        
-        # Setup Frame (Menu)
-        self.setup_frame = ttk.Frame(self.main_container)
-        self.setup_frame.place(relx=0.5, rely=0.5, anchor='center')
-        
-        self.create_setup_ui()
-        
-        # Game Frame
-        self.game_frame = ttk.Frame(self.main_container)
-        
-        self.canvas = tk.Canvas(self.game_frame, 
-                              width=self.screen_width, 
-                              height=self.screen_height, 
-                              bg=self.colors['bg'], 
-                              highlightthickness=0)
-        self.canvas.pack(fill='both', expand=True)
-        self.canvas.bind("<Button-1>", self.handle_click)
-        self.canvas.bind("<Motion>", self.handle_motion)
-        
+        self.winning_cells = []
         self.hover_col = -1
-        self.winning_pieces = []
+        self.is_ai_thinking = False
         
-        # Overlay buttons
-        self.create_game_buttons()
+        # Player type options
+        self.player_types = ["Human", "Minimax", "Evolving"]
+        
+        # Create frames
+        self._create_menu_screen()
+        self._create_game_screen()
+        
+        # Start with menu
+        self.show_menu()
 
-    def create_setup_ui(self):
+    def _create_menu_screen(self):
+        """Create the main menu screen"""
+        self.menu_frame = tk.Frame(self.root, bg=self.COLORS['bg_dark'])
+        
+        # Center container
+        center = tk.Frame(self.menu_frame, bg=self.COLORS['bg_dark'])
+        center.place(relx=0.5, rely=0.5, anchor='center')
+        
         # Title
-        ttk.Label(self.setup_frame, text="CONNECT 4", style="Header.TLabel").grid(row=0, column=0, columnspan=2, pady=(0, 50))
+        tk.Label(center, text="CONNECT", font=('Helvetica Neue', 72, 'bold'),
+                bg=self.COLORS['bg_dark'], fg=self.COLORS['p1']).pack()
+        tk.Label(center, text="FOUR", font=('Helvetica Neue', 72, 'bold'),
+                bg=self.COLORS['bg_dark'], fg=self.COLORS['p2']).pack()
         
-        # Player 1 Section
-        p1_frame = tk.Frame(self.setup_frame, bg=self.colors['bg'], bd=2, relief='groove')
-        p1_frame.grid(row=1, column=0, padx=20, pady=10, sticky='nsew')
+        # Spacer
+        tk.Frame(center, height=60, bg=self.COLORS['bg_dark']).pack()
         
-        tk.Label(p1_frame, text="PLAYER 1 (RED)", font=('Helvetica', 16, 'bold'), bg=self.colors['bg'], fg=self.colors['p1']).pack(pady=10)
+        # Player Selection Panel
+        panel = tk.Frame(center, bg=self.COLORS['bg_panel'], padx=40, pady=30)
+        panel.pack()
         
-        self.player1_var = tk.StringVar(value="Human")
-        self.player1_var.trace('w', self.update_ui_state)
-        p1_menu = ttk.OptionMenu(p1_frame, self.player1_var, "Human", *self.player_types)
-        p1_menu.pack(pady=5, padx=20, fill='x')
-        
-        self.p1_diff_label = tk.Label(p1_frame, text="Difficulty", font=('Helvetica', 12), bg=self.colors['bg'], fg=self.colors['text'])
-        self.p1_diff_label.pack(pady=(10,0))
-        self.diff1_var = tk.StringVar(value="easy")
-        self.p1_diff_menu = ttk.OptionMenu(p1_frame, self.diff1_var, "easy", "easy", "medium", "hard")
-        self.p1_diff_menu.pack(pady=5, padx=20, fill='x')
-
-        # Player 2 Section
-        p2_frame = tk.Frame(self.setup_frame, bg=self.colors['bg'], bd=2, relief='groove')
-        p2_frame.grid(row=1, column=1, padx=20, pady=10, sticky='nsew')
-        
-        tk.Label(p2_frame, text="PLAYER 2 (YELLOW)", font=('Helvetica', 16, 'bold'), bg=self.colors['bg'], fg=self.colors['p2']).pack(pady=10)
-        
-        self.player2_var = tk.StringVar(value="Human")
-        self.player2_var.trace('w', self.update_ui_state)
-        p2_menu = ttk.OptionMenu(p2_frame, self.player2_var, "Human", *self.player_types)
-        p2_menu.pack(pady=5, padx=20, fill='x')
-        
-        self.p2_diff_label = tk.Label(p2_frame, text="Difficulty", font=('Helvetica', 12), bg=self.colors['bg'], fg=self.colors['text'])
-        self.p2_diff_label.pack(pady=(10,0))
-        self.diff2_var = tk.StringVar(value="easy")
-        self.p2_diff_menu = ttk.OptionMenu(p2_frame, self.diff2_var, "easy", "easy", "medium", "hard")
-        self.p2_diff_menu.pack(pady=5, padx=20, fill='x')
-        
-        # Buttons
-        btn_frame = ttk.Frame(self.setup_frame)
-        btn_frame.grid(row=2, column=0, columnspan=2, pady=50)
-        
-        ttk.Button(btn_frame, text="START GAME", style="GameBtn.TButton", command=self.start_game).pack(side='left', padx=10, ipadx=20, ipady=10)
-        ttk.Button(btn_frame, text="EXIT", style="GameBtn.TButton", command=self.root.destroy).pack(side='left', padx=10, ipadx=20, ipady=10)
-        
-        # Initial UI state update
-        self.update_ui_state()
-
-    def update_ui_state(self, *args):
         # Player 1
-        if self.player1_var.get() == "Minimax":
-            self.p1_diff_label.pack(pady=(10,0))
-            self.p1_diff_menu.pack(pady=5, padx=20, fill='x')
-        else:
-            self.p1_diff_label.pack_forget()
-            self.p1_diff_menu.pack_forget()
-            
-        # Player 2
-        if self.player2_var.get() == "Minimax":
-            self.p2_diff_label.pack(pady=(10,0))
-            self.p2_diff_menu.pack(pady=5, padx=20, fill='x')
-        else:
-            self.p2_diff_label.pack_forget()
-            self.p2_diff_menu.pack_forget()
-
-    def create_game_buttons(self):
-        # We use place to put them exactly where we want on top of canvas
-        self.reset_btn = tk.Button(self.game_frame, text="NEW GAME", font=('Helvetica', 14, 'bold'),
-                                 bg=self.colors['button'], fg=self.colors['text'],
-                                 activebackground=self.colors['button_hover'], activeforeground=self.colors['accent'],
-                                 relief='flat', bd=0, cursor="hand2", command=self.reset_game)
+        p1_frame = tk.Frame(panel, bg=self.COLORS['bg_panel'])
+        p1_frame.pack(pady=15)
         
-        self.menu_btn = tk.Button(self.game_frame, text="MAIN MENU", font=('Helvetica', 14, 'bold'),
-                                 bg=self.colors['button'], fg=self.colors['text'],
-                                 activebackground=self.colors['button_hover'], activeforeground=self.colors['accent'],
-                                 relief='flat', bd=0, cursor="hand2", command=self.return_to_menu)
+        tk.Label(p1_frame, text="● PLAYER 1", font=('Helvetica', 18, 'bold'),
+                bg=self.COLORS['bg_panel'], fg=self.COLORS['p1']).pack(anchor='w')
+        
+        self.p1_var = tk.StringVar(value="Human")
+        self.p1_var.trace_add('write', self._on_p1_change)
+        p1_menu = ttk.Combobox(p1_frame, textvariable=self.p1_var, values=self.player_types,
+                              state='readonly', width=20, font=('Helvetica', 14))
+        p1_menu.pack(pady=5)
+        
+        self.p1_diff_frame = tk.Frame(p1_frame, bg=self.COLORS['bg_panel'])
+        tk.Label(self.p1_diff_frame, text="Difficulty:", font=('Helvetica', 12),
+                bg=self.COLORS['bg_panel'], fg=self.COLORS['text_dim']).pack(side='left')
+        self.p1_diff = tk.StringVar(value="medium")
+        ttk.Combobox(self.p1_diff_frame, textvariable=self.p1_diff, values=["easy", "medium", "hard"],
+                    state='readonly', width=10, font=('Helvetica', 12)).pack(side='left', padx=5)
+        
+        # Separator
+        tk.Frame(panel, height=2, bg=self.COLORS['border']).pack(fill='x', pady=15)
+        
+        # Player 2
+        p2_frame = tk.Frame(panel, bg=self.COLORS['bg_panel'])
+        p2_frame.pack(pady=15)
+        
+        tk.Label(p2_frame, text="● PLAYER 2", font=('Helvetica', 18, 'bold'),
+                bg=self.COLORS['bg_panel'], fg=self.COLORS['p2']).pack(anchor='w')
+        
+        self.p2_var = tk.StringVar(value="Human")
+        self.p2_var.trace_add('write', self._on_p2_change)
+        p2_menu = ttk.Combobox(p2_frame, textvariable=self.p2_var, values=self.player_types,
+                              state='readonly', width=20, font=('Helvetica', 14))
+        p2_menu.pack(pady=5)
+        
+        self.p2_diff_frame = tk.Frame(p2_frame, bg=self.COLORS['bg_panel'])
+        tk.Label(self.p2_diff_frame, text="Difficulty:", font=('Helvetica', 12),
+                bg=self.COLORS['bg_panel'], fg=self.COLORS['text_dim']).pack(side='left')
+        self.p2_diff = tk.StringVar(value="medium")
+        ttk.Combobox(self.p2_diff_frame, textvariable=self.p2_diff, values=["easy", "medium", "hard"],
+                    state='readonly', width=10, font=('Helvetica', 12)).pack(side='left', padx=5)
+        
+        # Spacer
+        tk.Frame(center, height=40, bg=self.COLORS['bg_dark']).pack()
+        
+        # Buttons - using darker colors for clear white text
+        btn_frame = tk.Frame(center, bg=self.COLORS['bg_dark'])
+        btn_frame.pack()
+        
+        self._create_button(btn_frame, "START GAME", '#1e8449', self._start_game).pack(side='left', padx=10)  # Dark green
+        self._create_button(btn_frame, "QUIT", '#922b21', self.root.destroy).pack(side='left', padx=10)  # Dark red
+        
+        # Footer
+        tk.Label(center, text="Press ESC to exit fullscreen • F11 to toggle",
+                font=('Helvetica', 11), bg=self.COLORS['bg_dark'], 
+                fg=self.COLORS['text_dim']).pack(pady=(40, 0))
 
-    def return_to_menu(self):
-        self.game.reset()
+    def _create_button(self, parent, text, color, command):
+        """Create a styled button with high contrast"""
+        btn = tk.Button(parent, text=text, font=('Helvetica', 18, 'bold'),
+                       bg=color, fg="#000000",  # Black text always
+                       activebackground=self._lighten(color),
+                       activeforeground='#ffffff', relief='solid', bd=2,
+                       padx=35, pady=15, cursor='hand2', command=command,
+                       highlightthickness=2, highlightbackground='#ffffff')
+        btn.bind('<Enter>', lambda e: btn.configure(bg=self._lighten(color)))
+        btn.bind('<Leave>', lambda e: btn.configure(bg=color))
+        return btn
+
+    def _lighten(self, hex_color):
+        """Lighten a hex color"""
+        r = int(hex_color[1:3], 16)
+        g = int(hex_color[3:5], 16)
+        b = int(hex_color[5:7], 16)
+        factor = 1.2
+        r = min(255, int(r * factor))
+        g = min(255, int(g * factor))
+        b = min(255, int(b * factor))
+        return f'#{r:02x}{g:02x}{b:02x}'
+
+    def _on_p1_change(self, *args):
+        if self.p1_var.get() == "Minimax":
+            self.p1_diff_frame.pack(pady=5)
+        else:
+            self.p1_diff_frame.pack_forget()
+
+    def _on_p2_change(self, *args):
+        if self.p2_var.get() == "Minimax":
+            self.p2_diff_frame.pack(pady=5)
+        else:
+            self.p2_diff_frame.pack_forget()
+
+    def _create_game_screen(self):
+        """Create the game screen with canvas"""
+        self.game_frame = tk.Frame(self.root, bg=self.COLORS['bg_dark'])
+        
+        self.canvas = tk.Canvas(self.game_frame, width=self.screen_w, height=self.screen_h,
+                               bg=self.COLORS['bg_dark'], highlightthickness=0)
+        self.canvas.pack(fill='both', expand=True)
+        
+        self.canvas.bind('<Button-1>', self._on_click)
+        self.canvas.bind('<Motion>', self._on_motion)
+
+    def show_menu(self):
+        """Show the menu screen"""
         self.game_frame.pack_forget()
-        self.setup_frame.place(relx=0.5, rely=0.5, anchor='center')
+        self.menu_frame.pack(fill='both', expand=True)
 
-    def start_game(self):
+    def show_game(self):
+        """Show the game screen"""
+        self.menu_frame.pack_forget()
+        self.game_frame.pack(fill='both', expand=True)
+
+    def _start_game(self):
+        """Initialize and start a new game"""
+        self.game.reset()
+        self.winning_cells = []
+        self.hover_col = -1
+        self.is_ai_thinking = False
+        
         # Create player instances
-        p1_type = self.player1_var.get()
+        p1_type = self.p1_var.get()
         if p1_type == "Human":
             self.players[0] = "Human"
         elif p1_type == "Minimax":
-            self.players[0] = MinimaxAgent(player=1, difficulty=self.diff1_var.get())
-        # elif p1_type == "RL":
-        #     self.players[0] = RLAgent(player=1)
-        #     self.players[0].create_pretrained_weights()
-        # elif p1_type == "ML":
-        #     self.players[0] = MLAgent(player=1)
+            self.players[0] = MinimaxAgent(player=1, difficulty=self.p1_diff.get())
+        elif p1_type == "Evolving":
+            self.players[0] = EvolvingMinimaxAgent(player=1)
         
-        p2_type = self.player2_var.get()
+        p2_type = self.p2_var.get()
         if p2_type == "Human":
             self.players[1] = "Human"
         elif p2_type == "Minimax":
-            self.players[1] = MinimaxAgent(player=2, difficulty=self.diff2_var.get())
-        # elif p2_type == "RL":
-        #     self.players[1] = RLAgent(player=2)
-        #     self.players[1].create_pretrained_weights()
-        # elif p2_type == "ML":
-        #     self.players[1] = MLAgent(player=2)
+            self.players[1] = MinimaxAgent(player=2, difficulty=self.p2_diff.get())
+        elif p2_type == "Evolving":
+            self.players[1] = EvolvingMinimaxAgent(player=2)
         
-        # Hide setup, show game
-        self.setup_frame.place_forget()
-        self.game_frame.pack(fill='both', expand=True)
-        self.draw_board()
+        self.show_game()
+        self._draw()
         
-        # If player 1 is AI, make first move
+        # If first player is AI, start their move
         if self.players[0] != "Human":
-            self.root.after(500, self.make_ai_move)
+            self.root.after(self.AI_DELAY, self._ai_move)
 
-    def make_ai_move(self):
-        if self.game.game_over:
-            return
-        current_player = self.players[self.game.turn - 1]
-        if current_player == "Human":
-            return
-            
-        # Show thinking state (optional, could add text to canvas)
-        self.canvas.config(cursor="watch")
-        self.root.update()
+    def _draw(self):
+        """Render the entire game board"""
+        self.canvas.delete('all')
         
-        move = current_player.get_move(self.game)
+        # Calculate board position (centered, with room for header/footer)
+        bx = (self.screen_w - self.board_w) // 2
+        by = 100  # Fixed top margin for header
         
-        self.canvas.config(cursor="")
+        # Header
+        self._draw_header(50)
         
-        result, winning_pieces = self.game.drop_piece(move)
-        if winning_pieces:
-            self.winning_pieces = winning_pieces
-            
-        self.draw_board()
-        if result == "WIN":
-            winner_name = "Red" if self.game.turn == 1 else "Yellow"
-            self.show_game_over(f"{winner_name} Wins!")
-        elif result == "DRAW":
-            self.show_game_over("It's a Draw!")
-        else:
-            self.after_move()
-
-    def after_move(self):
-        if self.game.game_over:
-            return
-        if self.players[self.game.turn - 1] != "Human":
-            self.root.after(100, self.make_ai_move) # Reduced delay for snappier feel
-
-    def draw_board(self):
-        self.canvas.delete("all")
+        # Board background with rounded corners (simulated)
+        pad = 15
+        self.canvas.create_rectangle(bx - pad, by - pad, 
+                                     bx + self.board_w + pad, by + self.board_h + pad,
+                                     fill=self.COLORS['board_bg'], outline='', width=0)
         
-        # Draw Title
-        self.canvas.create_text(self.screen_width//2, 60, text="CONNECT 4", fill=self.colors['text'], font=('Helvetica', 36, 'bold'))
-        
-        # Draw Status
-        turn_text = f"PLAYER {self.game.turn}'S TURN"
-        turn_color = self.colors['p1'] if self.game.turn == 1 else self.colors['p2']
-        self.canvas.create_text(self.screen_width//2, 120, text=turn_text, fill=turn_color, font=('Helvetica', 24, 'bold'))
-
-        # Draw Board Background
-        self.canvas.create_rectangle(
-            self.offset_x - 20, self.offset_y - 20,
-            self.offset_x + self.board_width + 20, self.offset_y + self.board_height + 20,
-            fill=self.colors['board'], outline=self.colors['board'], width=0
-        )
-        
-        # Draw Slots
-        for r in range(self.game.rows):
-            for c in range(self.game.cols):
-                x_center = self.offset_x + c * self.cell_size + self.cell_size / 2
-                y_center = self.offset_y + r * self.cell_size + self.cell_size / 2
+        # Draw cells
+        for r in range(6):
+            for c in range(7):
+                cx = bx + c * self.cell_size + self.cell_size // 2
+                cy = by + r * self.cell_size + self.cell_size // 2
                 
                 val = self.game.board[r][c]
                 if val == 1:
-                    color = self.colors['p1']
-                    outline = self.colors['p1']
+                    fill = self.COLORS['p1']
                 elif val == 2:
-                    color = self.colors['p2']
-                    outline = self.colors['p2']
+                    fill = self.COLORS['p2']
                 else:
-                    color = self.colors['slot_empty']
-                    outline = self.colors['slot_empty']
+                    fill = self.COLORS['slot_empty']
                 
-                # Highlight winning pieces
-                width = 2
-                if hasattr(self, 'winning_pieces') and self.winning_pieces and (r, c) in self.winning_pieces:
-                    outline = "#ffffff" # White outline for winning pieces
-                    width = 5
+                # Check for winning highlight
+                outline_color = fill
+                outline_width = 0
+                if self.winning_cells and (r, c) in self.winning_cells:
+                    outline_color = 'white'
+                    outline_width = 4
                 
-                # Draw circle
-                self.canvas.create_oval(
-                    x_center - self.radius, y_center - self.radius,
-                    x_center + self.radius, y_center + self.radius,
-                    fill=color, outline=outline, width=width
-                )
+                self.canvas.create_oval(cx - self.radius, cy - self.radius,
+                                       cx + self.radius, cy + self.radius,
+                                       fill=fill, outline=outline_color, width=outline_width)
         
-        # Draw Hover Indicator (Ghost Piece)
-        if not self.game.game_over and self.players[self.game.turn - 1] == "Human" and hasattr(self, 'hover_col') and self.hover_col != -1:
-            c = self.hover_col
-            # Find the first empty row in this column
-            target_row = -1
-            for r in range(self.game.rows - 1, -1, -1):
-                if self.game.board[r][c] == 0:
-                    target_row = r
-                    break
-            
-            if target_row != -1:
-                x_center = self.offset_x + c * self.cell_size + self.cell_size / 2
-                y_center = self.offset_y + target_row * self.cell_size + self.cell_size / 2
-                
-                color = self.colors['p1'] if self.game.turn == 1 else self.colors['p2']
-                # Draw semi-transparent ghost piece (stipple is a hack for transparency in standard tkinter)
-                self.canvas.create_oval(
-                    x_center - self.radius, y_center - self.radius,
-                    x_center + self.radius, y_center + self.radius,
-                    fill=color, outline=color, width=2, stipple='gray50'
-                )
-                
-                # Also highlight the column header
-                x_header = self.offset_x + c * self.cell_size + self.cell_size / 2
-                y_header = self.offset_y - 30
-                self.canvas.create_polygon(
-                    x_header, y_header, 
-                    x_header - 10, y_header - 15, 
-                    x_header + 10, y_header - 15, 
-                    fill=color, outline=color
-                )
+        # Ghost piece (hover preview)
+        if not self.game.game_over and self._is_human_turn() and 0 <= self.hover_col < 7:
+            target_row = self._get_drop_row(self.hover_col)
+            if target_row >= 0:
+                cx = bx + self.hover_col * self.cell_size + self.cell_size // 2
+                cy = by + target_row * self.cell_size + self.cell_size // 2
+                color = self.COLORS['p1'] if self.game.turn == 1 else self.COLORS['p2']
+                self.canvas.create_oval(cx - self.radius, cy - self.radius,
+                                       cx + self.radius, cy + self.radius,
+                                       fill=color, outline=color, width=0, stipple='gray50')
+                # Drop indicator arrow above board
+                arrow_y = by - 15
+                self.canvas.create_polygon(cx, arrow_y, cx - 10, arrow_y - 15, cx + 10, arrow_y - 15,
+                                          fill=color, outline='')
+        
+        # Footer buttons - positioned below board with margin
+        self._draw_footer(by + self.board_h + 30)
 
-        # Update button positions
-        btn_y = self.offset_y + self.board_height + 60
-        self.reset_btn.place(x=self.screen_width//2 - 140, y=btn_y, width=120, height=50)
-        self.menu_btn.place(x=self.screen_width//2 + 20, y=btn_y, width=120, height=50)
-
-    def show_game_over(self, message):
-        # Create a semi-transparent overlay
-        overlay = tk.Frame(self.game_frame, bg='black')
-        overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
-        # Tkinter doesn't support real transparency easily, so we'll just use a dark frame or message box
-        # Actually, let's just use a nice custom dialog on the canvas
-        
-        # Remove overlay for now as it blocks everything opaque
-        overlay.destroy()
-        
-        # Draw on canvas
-        cx, cy = self.screen_width // 2, self.screen_height // 2
-        
-        # Box
-        self.canvas.create_rectangle(cx - 200, cy - 100, cx + 200, cy + 100, fill=self.colors['board'], outline=self.colors['accent'], width=3)
-        
-        # Text
-        self.canvas.create_text(cx, cy - 20, text=message, fill=self.colors['text'], font=('Helvetica', 32, 'bold'))
-        
-        # We can't easily add buttons to canvas items, but we can just rely on the existing buttons or click to dismiss
-        self.canvas.create_text(cx, cy + 40, text="Click New Game or Menu", fill=self.colors['text'], font=('Helvetica', 16))
-
-    def handle_click(self, event):
-        if self.game.game_over or self.players[self.game.turn - 1] != "Human":
-            return
-            
-        # Check if click is within board horizontal area
-        if event.x < self.offset_x or event.x > self.offset_x + self.board_width:
-            return
-            
-        col = (event.x - self.offset_x) // self.cell_size
-        if 0 <= col < self.game.cols:
-            result = self.game.drop_piece(col)
-            self.draw_board()
-            
-            if result == "WIN":
-                winner_name = "Red" if self.game.turn == 1 else "Yellow"
-                self.show_game_over(f"{winner_name} Wins!")
-            elif result == "DRAW":
-                self.show_game_over("It's a Draw!")
+    def _draw_header(self, y):
+        """Draw the header with turn indicator"""
+        if self.game.game_over:
+            if self.winning_cells:
+                winner = self.game.board[self.winning_cells[0][0]][self.winning_cells[0][1]]
+                color = self.COLORS['p1'] if winner == 1 else self.COLORS['p2']
+                text = f"PLAYER {winner} WINS!"
             else:
-                self.after_move()
-
-    def handle_motion(self, event):
-        if self.game.game_over or self.players[self.game.turn - 1] != "Human":
-            return
-            
-        # Check if mouse is within board horizontal area
-        if event.x < self.offset_x or event.x > self.offset_x + self.board_width:
-            new_col = -1
+                color = self.COLORS['text']
+                text = "IT'S A DRAW!"
         else:
-            new_col = (event.x - self.offset_x) // self.cell_size
-            if not (0 <= new_col < self.game.cols):
-                new_col = -1
+            color = self.COLORS['p1'] if self.game.turn == 1 else self.COLORS['p2']
+            player_name = "Human" if self._is_human_turn() else self._get_ai_name()
+            text = f"PLAYER {self.game.turn}'s TURN" + (f" ({player_name})" if not self._is_human_turn() else "")
+            if self.is_ai_thinking:
+                text = f"PLAYER {self.game.turn} THINKING..."
+        
+        # Draw with shadow for better visibility
+        self.canvas.create_text(self.screen_w // 2 + 2, y + 2, text=text,
+                               font=('Helvetica', 24, 'bold'), fill='#000000')  # Shadow
+        self.canvas.create_text(self.screen_w // 2, y, text=text,
+                               font=('Helvetica', 24, 'bold'), fill=color)
+
+    def _draw_footer(self, y):
+        """Draw footer buttons"""
+        # Ensure buttons are visible within screen
+        btn_y = min(y, self.screen_h - 70)
+        # New Game button - darker blue for contrast
+        self._draw_btn(self.screen_w // 2 - 160, btn_y, 150, 55, "NEW GAME", 
+                      '#1a5276', 'new_game')
+        # Menu button - darker green for contrast
+        self._draw_btn(self.screen_w // 2 + 10, btn_y, 150, 55, "MENU",
+                      '#1e8449', 'menu')
+
+    def _draw_btn(self, x, y, w, h, text, color, tag):
+        """Draw a clickable button on canvas with clear text"""
+        # Button background - darker color
+        self.canvas.create_rectangle(x, y, x + w, y + h, fill=color, outline='#ffffff', width=2, tags=tag)
+        # Button text - LARGE white text for maximum visibility
+        self.canvas.create_text(x + w // 2, y + h // 2, text=text,
+                               font=('Helvetica', 18, 'bold'), fill='#ffffff', tags=tag)
+        self.canvas.tag_bind(tag, '<Button-1>', lambda e: self._on_btn_click(tag))
+
+    def _on_btn_click(self, tag):
+        """Handle button clicks"""
+        if tag == 'new_game':
+            self._reset_game()
+        elif tag == 'menu':
+            self.show_menu()
+
+    def _reset_game(self):
+        """Reset the current game"""
+        # Finalize for learning agents if game was in progress
+        if not self.game.game_over and any(isinstance(p, EvolvingMinimaxAgent) for p in self.players):
+            for p in self.players:
+                if isinstance(p, EvolvingMinimaxAgent):
+                    p.last_game_boards = []  # Clear without learning
+        
+        self.game.reset()
+        self.winning_cells = []
+        self.hover_col = -1
+        self.is_ai_thinking = False
+        self._draw()
+        
+        if self.players[0] != "Human":
+            self.root.after(self.AI_DELAY, self._ai_move)
+
+    def _is_human_turn(self):
+        """Check if current turn is human"""
+        return self.players[self.game.turn - 1] == "Human"
+
+    def _get_ai_name(self):
+        """Get name of current AI player"""
+        player = self.players[self.game.turn - 1]
+        if isinstance(player, EvolvingMinimaxAgent):
+            return "Evolving AI"
+        elif isinstance(player, MinimaxAgent):
+            return "Minimax AI"
+        return "AI"
+
+    def _get_drop_row(self, col):
+        """Find the row where a piece would land in the given column"""
+        for r in range(5, -1, -1):
+            if self.game.board[r][col] == 0:
+                return r
+        return -1
+
+    def _on_click(self, event):
+        """Handle canvas clicks"""
+        if self.game.game_over or not self._is_human_turn() or self.is_ai_thinking:
+            return
+        
+        bx = (self.screen_w - self.board_w) // 2
+        by = 100  # Match the fixed top margin
+        
+        if bx <= event.x <= bx + self.board_w and by <= event.y <= by + self.board_h:
+            col = (event.x - bx) // self.cell_size
+            self._make_move(col)
+
+    def _on_motion(self, event):
+        """Handle mouse motion for hover effect"""
+        if self.game.game_over or not self._is_human_turn():
+            if self.hover_col != -1:
+                self.hover_col = -1
+                self._draw()
+            return
+        
+        bx = (self.screen_w - self.board_w) // 2
+        
+        if bx <= event.x <= bx + self.board_w:
+            new_col = (event.x - bx) // self.cell_size
+            new_col = max(0, min(6, new_col))
+        else:
+            new_col = -1
         
         if new_col != self.hover_col:
             self.hover_col = new_col
-            self.draw_board()
+            self._draw()
 
-    def reset_game(self):
-        self.game.reset()
-        self.winning_pieces = []
-        self.draw_board()
+    def _make_move(self, col):
+        """Make a move and handle result"""
+        if col < 0 or col > 6:
+            return
+        
+        # Record state for evolving agents BEFORE the move
+        for p in self.players:
+            if isinstance(p, EvolvingMinimaxAgent):
+                p.record_game_state(self.game)
+        
+        result, win_cells = self.game.drop_piece(col)
+        
+        if result is None:
+            return  # Invalid move
+        
+        if result == "WIN":
+            self.winning_cells = win_cells
+            self._draw()
+            self._finalize_game()
+        elif result == "DRAW":
+            self._draw()
+            self._finalize_game()
+        else:
+            self._draw()
+            # Next player's turn
+            if not self._is_human_turn():
+                self.root.after(self.AI_DELAY, self._ai_move)
+
+    def _ai_move(self):
+        """Execute AI move with delay for UX"""
+        if self.game.game_over:
+            return
+        
+        self.is_ai_thinking = True
+        self._draw()
+        self.root.update()
+        
+        player = self.players[self.game.turn - 1]
+        move = player.get_move(self.game)
+        
+        self.is_ai_thinking = False
+        self._make_move(move)
+
+    def _finalize_game(self):
+        """Call finalize_game on EvolvingMinimaxAgent players for learning"""
+        for p in self.players:
+            if isinstance(p, EvolvingMinimaxAgent):
+                p.finalize_game(self.game)
+        print("Game finished - Evolving agents updated their weights")
+
 
 if __name__ == "__main__":
     root = tk.Tk()
-    gui = Connect4GUI(root)
+    app = Connect4GUI(root)
     root.mainloop()

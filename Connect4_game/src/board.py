@@ -51,7 +51,7 @@ class Board:
             return False # the game is over, no more moves allowed
         if not self.isValidMove(col):
             return False #invalid move
-        for row in range(0,6):
+        for row in range(self.rows - 1, -1, -1):  # Start from bottom row
             if self.board[row][col] == 0:
                 self.board[row][col] = self.turn
                 if self.checkWin(row, col):
@@ -90,4 +90,7 @@ class Board:
                 if self.board[r][c] != 0 and self.checkWin(r, c):
                     return self.board[r][c]
         return 0  # No winner yet
+    
+    def checkDrawState(self):
+        return self.checkDraw()
     
