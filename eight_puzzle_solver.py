@@ -15,7 +15,7 @@ class Node:
 
 
 class PriorityQueue:
-    def __init__(self):
+    def __init__(self): 
         self.head = None
 
     def enqueue(self, data, priority):
