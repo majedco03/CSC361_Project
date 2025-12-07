@@ -16,4 +16,9 @@ this is the classic connect-4 game with a 6*7 board that allows you to play agai
 for more details about connect for read `Connect4_game/src/README.md` 
 
 ### 8-puzzle
+
+The Solver Will Provide Two Solution With Statistic And Paths A*,Greedy And User Can See Two Algorithm in One GUI And Can Compare Between Them:
+
+- **A\***
+- - **Greedy**
 دورك يالوليد هنا
