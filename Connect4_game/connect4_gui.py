@@ -71,7 +71,7 @@ class Connect4Game:
         return self._isDraw() and self.checkWinState() == 0
 
     def copy(self):
-        newGame = connect4Game()
+        newGame = Connect4Game()
         newGame.board = [row[:] for row in self.board]
         newGame.turn = self.turn
         newGame.gameOver = self.gameOver

@@ -104,7 +104,7 @@ class MinimaxAgent:
     
     def result(self, board, action):
         new_board = board.copy()
-        new_board.drop_piece(action)
+        new_board.dropPiece(action)
         return new_board
     
 

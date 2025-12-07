@@ -15,7 +15,9 @@ class SudokuGUI:
         self.root = root
         self.on_back = on_back
         self.root.title("Sudoku AI Project - Final Submission")
-        self.root.geometry("700x900")
+        self.root.attributes('-fullscreen', True)
+        self.root.bind('<Escape>', lambda e: self.root.attributes('-fullscreen', False))
+        self.root.bind('<F11>', lambda e: self.root.attributes('-fullscreen', not self.root.attributes('-fullscreen')))
         self.root.configure(bg="#1a1a2e")
         
         self.game = SudokuGame()

@@ -283,7 +283,7 @@ class EvolvingMinimaxAgent:
                 best_action = action
         return best_action
 
-    def getMove(self, game):
+    def get_move(self, game):
         return self.alphaBetaSearch(game, self.depth)
     
     def record_game_state(self, board):
