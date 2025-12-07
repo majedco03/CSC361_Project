@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 
-# Import the GUI classes
+
 try:
     from Connect4_game.connect4_gui import connect4Gui
 except ImportError:
@@ -21,26 +21,26 @@ class GameHubApp:
     def __init__(self, root):
         self.root = root
         self.root.title("GameHub")
-        # Set Full Screen
+
         self.root.attributes('-fullscreen', True)
         self.root.configure(bg="#1a1a2e")
         
-        # This variable tracks the currently active frame (Menu or Game)
+
         self.current_frame = None
 
-        # Start by showing the menu 
+
         self.show_menu()
 
     def show_menu(self):
-        """Clears whatever is on screen and shows the GameHub Menu"""
+
         if self.current_frame:
             self.current_frame.destroy()
 
-        # Create a container for the menu
+
         self.current_frame = tk.Frame(self.root, bg="#1a1a2e")
         self.current_frame.pack(fill="both", expand=True)
 
-        # --- Header ---
+
         title_label = tk.Label(
             self.current_frame, 
             text="GameHub", 
@@ -59,13 +59,13 @@ class GameHubApp:
         )
         subtitle_label.pack(pady=(0, 50))
 
-        # --- Buttons ---
+
         self.create_button("Sudoku", self.launch_sudoku)
         self.create_button("Connect 4", self.launch_connect4)
         self.create_button("8-Puzzle", self.launch_eight_puzzle)
         self.create_button("Credits", self.show_credits)
         
-        # Exit Button
+
         exit_btn = tk.Button(
             self.current_frame,
             text="Exit",
@@ -95,47 +95,36 @@ class GameHubApp:
         )
         btn.pack(pady=10)
 
-    # --- Launchers ---
 
     def launch_sudoku(self):
         if SudokuGUI:
-            # Destroy Menu
             if self.current_frame:
                 self.current_frame.destroy()
             
-            # Initialize Sudoku
             self.app = SudokuGUI(self.root, on_back=self.show_menu)
             
-            # Sudoku manages its own frames
             self.current_frame = None
         else:
             messagebox.showerror("Error", "sudoku_gui.py not found.")
 
     def launch_connect4(self):
         if connect4Gui:
-            # Destroy Menu
             if self.current_frame:
                 self.current_frame.destroy()
             
-            # Initialize Connect4
-            # We pass 'self.show_menu' as the callback for the Back button
             self.app = connect4Gui(self.root, on_back=self.show_menu)
             
-            # Connect4 manages its own frames on root
             self.current_frame = None
         else:
             messagebox.showerror("Error", "connect4_gui.py not found.")
 
     def launch_eight_puzzle(self):
         if EightPuzzleGUI:
-            # Destroy Menu
             if self.current_frame:
                 self.current_frame.destroy()
             
-            # Initialize 8-Puzzle
             self.app = EightPuzzleGUI(self.root, on_back=self.show_menu)
             
-            # 8-Puzzle manages its own frames
             self.current_frame = None
         else:
             messagebox.showerror("Error", "eight_puzzle_gui.py not found.")
