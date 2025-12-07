@@ -3,10 +3,6 @@ from tkinter import messagebox
 import time
 import math
 
-# ==========================================
-# LOGIC SECTION (Unchanged)
-# ==========================================
-
 class Node:
     def __init__(self, data, priority):
         self.data = data
@@ -328,11 +324,7 @@ def solve_logic_B(start_state):
     if not path: path = [start_state]
 
     return path, (str(s.timeTaken*10**-9)[:6]), s.steps
-
-
-# ==========================================
-# GUI LOGIC (Updated Colors)
-# ==========================================
+    
 
 class EightPuzzleGUI:
     def __init__(self, root, on_back=None):
@@ -340,16 +332,15 @@ class EightPuzzleGUI:
         self.on_back = on_back
         self.root.title("8-Puzzle Dual Solver")
         
-        # --- COLOR THEME (GameHub Style) ---
-        self.BG_COLOR = "#1a1a2e"       # Main Dark Background
-        self.FG_COLOR = "#ffffff"       # Main Text Color
-        self.ACCENT_COLOR = "#e94560"   # Pinkish Red (Highlights)
-        self.BTN_BG = "#16213e"         # Button Background (Dark Blue)
-        self.BTN_ACTIVE = "#0f3460"     # Button Active State
-        self.CARD_BG = "#16213e"        # Panels/Cards Background
-        self.TILE_BG = "#e94560"        # Puzzle Tile Color
-        self.TILE_FG = "#ffffff"        # Puzzle Tile Text
-        self.INPUT_BG = "#0f3460"       # Input field background
+        self.BG_COLOR = "#1a1a2e"       
+        self.FG_COLOR = "#ffffff"       
+        self.ACCENT_COLOR = "#e94560"   
+        self.BTN_BG = "#16213e"         
+        self.BTN_ACTIVE = "#0f3460"     
+        self.CARD_BG = "#16213e"        
+        self.TILE_BG = "#e94560"        
+        self.TILE_FG = "#ffffff"        
+        self.INPUT_BG = "#0f3460"       
 
         self.main_frame = tk.Frame(self.root, bg=self.BG_COLOR)
         self.main_frame.pack(fill="both", expand=True)
@@ -360,7 +351,6 @@ class EightPuzzleGUI:
         self.setup_ui()
 
     def setup_ui(self):
-        # === PAGE 1: INPUT ===
         self.input_frame = tk.Frame(self.main_frame, bg=self.BG_COLOR)
         self.input_frame.pack(fill="both", expand=True, pady=100)
 
@@ -370,7 +360,6 @@ class EightPuzzleGUI:
                  bg=self.BG_COLOR, 
                  fg=self.ACCENT_COLOR).pack(pady=(0, 30))
         
-        # Styled Entry
         self.input_entry = tk.Entry(self.input_frame, 
                                     font=("Arial", 22), 
                                     width=15, 
@@ -382,27 +371,24 @@ class EightPuzzleGUI:
         self.input_entry.pack(pady=20, ipady=5)
         self.input_entry.bind('<Return>', self.start_solver)
         
-        # Compare Button
         self.create_styled_button(self.input_frame, "COMPARE", self.start_solver, bg_override="#e94560", fg_override="black").pack(pady=10)
 
         if self.on_back:
              self.create_styled_button(self.input_frame, "BACK", self.go_back).pack(pady=10)
 
-        # === PAGE 2: SOLVER (Split Screen) ===
         self.solver_frame = tk.Frame(self.main_frame, bg=self.BG_COLOR)
         
-        # Left Frame (Algorithm A)
         self.frame_A = tk.Frame(self.solver_frame, bg=self.BG_COLOR)
         self.frame_A.pack(side="left", fill="both", expand=True, padx=20)
 
-        # Right Frame (Algorithm B)
+
         self.frame_B = tk.Frame(self.solver_frame, bg=self.BG_COLOR)
         self.frame_B.pack(side="right", fill="both", expand=True, padx=20)
 
-        # Separator Line (Styled)
+
         tk.Frame(self.solver_frame, bg=self.BTN_BG, width=2).place(relx=0.5, rely=0.1, relheight=0.8)
         
-        # Build Panels
+
         self.lbl_time_A, self.lbl_steps_A, self.lbl_prog_A, self.grid_labels_A = self.create_solver_panel(
             self.frame_A, "Greedy Algorithm", self.prev_A, self.next_A
         )
@@ -411,13 +397,11 @@ class EightPuzzleGUI:
             self.frame_B, "A* Algorithm", self.prev_B, self.next_B
         )
         
-        # Back button in solver frame
         if self.on_back:
              self.create_styled_button(self.solver_frame, "BACK", self.go_back).pack(side="bottom", pady=30)
 
 
     def create_styled_button(self, parent, text, command, bg_override=None, fg_override=None):
-        """Helper to create GameHub styled buttons"""
         bg = bg_override if bg_override else self.BTN_BG
         # GameHub uses black text on buttons often, but can use white if preferred. 
         # Using white for non-accent buttons looks cleaner on dark theme, but following request:
@@ -440,7 +424,6 @@ class EightPuzzleGUI:
     def create_solver_panel(self, parent, title, prev_cmd, next_cmd):
         tk.Label(parent, text=title, font=("Helvetica", 20, "bold"), bg=self.BG_COLOR, fg=self.ACCENT_COLOR).pack(pady=(40, 15))
 
-        # Stats Card
         stats = tk.Frame(parent, bg=self.CARD_BG, padx=15, pady=10)
         stats.pack(fill="x", padx=40)
 
@@ -456,11 +439,9 @@ class EightPuzzleGUI:
         s_lbl = tk.Label(r2, text="0", font=("Arial", 11, "bold"), bg=self.CARD_BG, fg="#4CAF50")
         s_lbl.pack(side="right")
 
-        # Progress
         p_lbl = tk.Label(parent, text="Step: 0", font=("Arial", 12), bg=self.BG_COLOR, fg=self.FG_COLOR)
         p_lbl.pack(pady=(20, 10))
 
-        # Grid
         g_cont = tk.Frame(parent, bg=self.BG_COLOR)
         g_cont.pack(pady=10)
         labels = []
@@ -478,11 +459,9 @@ class EightPuzzleGUI:
                 l.grid(row=r, column=c, padx=4, pady=4)
                 labels.append(l)
 
-        # Nav Buttons
         nav = tk.Frame(parent, bg=self.BG_COLOR)
         nav.pack(pady=20)
         
-        # Small Nav buttons
         btn_prev = tk.Button(nav, text="◄", command=prev_cmd, font=("Arial", 14), bg=self.BTN_BG, fg="white", bd=0, activebackground=self.BTN_ACTIVE, activeforeground="white", width=5)
         btn_prev.pack(side="left", padx=10)
         
@@ -499,29 +478,27 @@ class EightPuzzleGUI:
             messagebox.showerror("Error", "Please enter exactly 9 digits.")
             return
 
-        # 1. RUN ALGORITHM A
         path_a, time_a, steps_a = solve_logic_A(clean_input)
         self.data_A["path"] = path_a
         self.data_A["idx"] = 0
 
-        # Update Stats A
         self.lbl_time_A.config(text=f"{time_a}s")
         self.lbl_steps_A.config(text=str(steps_a))
         self.draw_grid(self.grid_labels_A, path_a[0])
         self.update_label_A()
 
-        # 2. RUN ALGORITHM B
+
         path_b, time_b, steps_b = solve_logic_B(clean_input)
         self.data_B["path"] = path_b
         self.data_B["idx"] = 0
 
-        # Update Stats B
+
         self.lbl_time_B.config(text=f"{time_b}s")
         self.lbl_steps_B.config(text=str(steps_b))
         self.draw_grid(self.grid_labels_B, path_b[0])
         self.update_label_B()
 
-        # 3. Switch Screen
+
         self.input_frame.pack_forget()
         self.solver_frame.pack(fill="both", expand=True)
 
@@ -529,10 +506,8 @@ class EightPuzzleGUI:
         for i, char in enumerate(state_string):
             lbl = label_list[i]
             if char == '0':
-                # Empty Tile Style (blends with background or dark placeholder)
                 lbl.config(text="", bg=self.BTN_BG) 
             else:
-                # Active Tile Style (GameHub Accent Color)
                 lbl.config(text=char, bg=self.ACCENT_COLOR, fg="white")
 
     def prev_A(self):
@@ -573,7 +548,6 @@ class EightPuzzleGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    # Simulate fullscreen environment for testing
     root.configure(bg="#1a1a2e")
     app = EightPuzzleGUI(root)
     root.mainloop()
