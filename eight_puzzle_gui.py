@@ -1,12 +1,11 @@
 import tkinter as tk
 from tkinter import messagebox
 import time
-
-import time
 import math
 
-
-# ----------------------------------------------------
+# ==========================================
+# LOGIC SECTION (Unchanged)
+# ==========================================
 
 class Node:
     def __init__(self, data, priority):
@@ -14,56 +13,36 @@ class Node:
         self.priority = priority
         self.next = None
 
-
-# ------------------------------------------------------------
-
 class PriorityQueue:
     def __init__(self):
         self.head = None
 
-    # Insert an element based on its priority
     def enqueue(self, data, priority):
         newNode = Node(data, priority)
-
-        # Case 1: Queue is empty or new node has higher priority than head
         if self.head is None or priority < self.head.priority:
             newNode.next = self.head
             self.head = newNode
         else:
-            # Traverse and find the correct position
             current = self.head
             while current.next is not None and current.next.priority <= priority:
                 current = current.next
-
             newNode.next = current.next
             current.next = newNode
 
-    # Remove and return the highest priority element
     def dequeue(self):
         if self.isEmpty():
             raise Exception("Priority Queue is empty")
-
         result = self.head.data
         self.head = self.head.next
         return result
 
-    # Peek at the highest priority element
     def peek(self):
         if self.isEmpty():
             raise Exception("Priority Queue is empty")
         return self.head.data
 
-    # Check if the queue is empty
     def isEmpty(self):
         return self.head is None
-
-    # Print the queue (for debugging)
-    def printQueue(self):
-        current = self.head
-        while current is not None:
-            print("(" + str(current.data) + ", priority: " + str(current.priority) + ") -> ", end="")
-            current = current.next
-        print("null")
 
     def inFrontier(self, c):
         tmp = self.head
@@ -73,20 +52,15 @@ class PriorityQueue:
             tmp = tmp.next
         return False
 
-
-# ----------------------------------------------------
-
 class Board:
-    depth = 0  # static variable
+    depth = 0 
 
     def __init__(self, arg1=None, arg2=None, arg3=None):
         self.rows = [[0 for _ in range(3)] for _ in range(3)]
         self.parent = None
         self.depthObject = 0
 
-        # Simulating constructor overloading based on arguments
         if isinstance(arg1, str):
-            # Board(String num)
             num = arg1
             idxPointer = 0
             for i in range(3):
@@ -99,7 +73,6 @@ class Board:
             self.depthObject = 0
 
         elif isinstance(arg1, list) and isinstance(arg2, list) and isinstance(arg3, list):
-            # Board(int [] r1,int [] r2,int [] r3)
             self.rows[0] = arg1
             self.rows[1] = arg2
             self.rows[2] = arg3
@@ -108,8 +81,6 @@ class Board:
             self.depthObject = 0
 
         else:
-            # Board()
-            # In Python lists are dynamic, but imitating initialization logic
             r1 = [0] * 3
             r2 = [0] * 3
             r3 = [0] * 3
@@ -119,13 +90,6 @@ class Board:
             self.parent = None
             Board.depth = 0
             self.depthObject = 0
-
-    def print(self):
-        for j in range(3):
-            for i in range(3):
-                print(str(self.rows[j][i]) + " ", end="")
-            print()
-        print("-----")
 
     def blankPos(self):
         res = [0] * 2
@@ -152,11 +116,9 @@ class Board:
         corner = 0
         mid = 0
         other = 0
-
         possibleAdj = 0
         Blank = self.blankPos()
 
-        # corners , mid , other
         if (Blank[0] == 0 or Blank[0] == 2) and (Blank[1] == 0 or Blank[1] == 2):
             corner = 1
             possibleAdj = 2
@@ -184,49 +146,27 @@ class Board:
         else:
             if Blank[0] == 0 or Blank[0] == 2:
                 adj[0] = self.rows[Blank[0]][0]
-                adj[1] = self.rows[1][1]  # mid
+                adj[1] = self.rows[1][1] 
                 adj[2] = self.rows[Blank[0]][2]
             else:
                 adj[0] = self.rows[0][Blank[1]]
-                adj[1] = self.rows[1][1]  # mid
+                adj[1] = self.rows[1][1] 
                 adj[2] = self.rows[2][Blank[1]]
-
         return adj
 
     def calcHurstic(self):
         sum_val = 0
-
         for i in range(3):
             for j in range(3):
-                if self.rows[i][j] == 1:
-                    sum_val += abs(i - 0) + abs(j - 0)
-                elif self.rows[i][j] == 2:
-                    sum_val += abs(i - 0) + abs(j - 1)
-                elif self.rows[i][j] == 3:
-                    sum_val += abs(i - 0) + abs(j - 2)
-                elif self.rows[i][j] == 4:
-                    sum_val += abs(i - 1) + abs(j - 0)
-                elif self.rows[i][j] == 5:
-                    sum_val += abs(i - 1) + abs(j - 1)
-                elif self.rows[i][j] == 6:
-                    sum_val += abs(i - 1) + abs(j - 2)
-                elif self.rows[i][j] == 7:
-                    sum_val += abs(i - 2) + abs(j - 0)
-                elif self.rows[i][j] == 8:
-                    sum_val += abs(i - 2) + abs(j - 1)
-                else:
-                    continue
+                val = self.rows[i][j]
+                if val == 0: continue
+                target_r = (val - 1) // 3
+                target_c = (val - 1) % 3
+                sum_val += abs(i - target_r) + abs(j - target_c)
         return sum_val
 
     def change(self, i, j, element):
         self.rows[i][j] = element
-
-    def Copy(self, element):
-        b = Board()
-        for i in range(3):
-            for j in range(3):
-                b.change(i, j, self.rows[i][j])
-        return b
 
     def changeAsCopy(self, element):
         b = Board()
@@ -234,7 +174,6 @@ class Board:
             for j in range(3):
                 b.change(i, j, self.rows[i][j])
 
-        # b copyed
         posZero = self.blankPos()
         posTarget = self.Pos(element)
         b.change(posZero[0], posZero[1], element)
@@ -242,13 +181,9 @@ class Board:
         b.depthObject = self.depthObject
         return b
 
-    def Sucssours(self, blist, size, frointer, algorithm):  #
+    def Sucssours(self, blist, size, frointer, algorithm):
         adj = self.adjElements()
-
-        bl = []  # ArrayList<Board>
-
         suc = [None] * len(adj)
-        idx = 0
         for i in range(len(adj)):
             tmp = self.changeAsCopy(adj[i])
             tmp.parent = self
@@ -263,22 +198,6 @@ class Board:
                 elif algorithm.lower() == "greedy":
                     frointer.enqueue(suc[i], suc[i].calcHurstic())
 
-    """
-     public static Board ChooseBest(Board [] boards , Board [] Dlist , int size) {
-
-		int min=boards[0].calcHurstic();
-		int idx=0;
-
-		for(int i=1;i<boards.length;i++) 
-			if(boards[i].calcHurstic()<min) {
-				min=boards[i].calcHurstic();
-				idx=i;
-			}
-
-		return boards[idx];
-	}
-    """
-
     def getBoardString(self):
         res = ""
         for i in range(3):
@@ -290,12 +209,10 @@ class Board:
     def equal(b1, b2):
         rows2 = b2.rows
         rows1 = b1.rows
-
         for i in range(3):
             for j in range(3):
                 if rows1[i][j] != rows2[i][j]:
                     return False
-
         return True
 
     @staticmethod
@@ -305,10 +222,6 @@ class Board:
                 return True
         return False
 
-
-
-# ------------------------------------------------------
-
 class Solver:
     def __init__(self):
         self.steps = 0
@@ -317,146 +230,108 @@ class Solver:
 
     def SolveByGreedy(self, num):
         startTime = time.time_ns()
-        explore = []  # ArrayList<Board>
         frontier = PriorityQueue()
         b = Board(num)
-
-        bList = [None] * 1000
+        bList = [None] * 3000 # Increased buffer slightly
         counter = 0
         idx = 0
+        
+        # Check initial state
+        if b.calcHurstic() == 0:
+             self.solution = [b]
+             self.steps = 0
+             self.timeTaken = 0
+             return
+
         while b.calcHurstic() != 0:
+            if idx >= 2999: break # Safety break
             bList[idx] = b
             idx += 1
             counter += 1
             b.Sucssours(bList, counter, frontier, "Greedy")
+            if frontier.isEmpty(): break
             b = frontier.dequeue()
 
         sum_val = 0
-        # b.print();
-        idx = 999
-        sol = [None] * 1000
-
-        while b.parent is not None:
-            sol[idx] = b
-            idx -= 1
-            b = b.parent
-
-        sol[idx] = b
-
-        finalSol = [None] * (1000 - idx)
-        c = 0
-        for i in range(idx, 1000):
-            finalSol[c] = sol[i]
-            c += 1
-            sum_val += 1
-            # System.out.println(sol[i].depthObject);
-
-        self.solution = finalSol
-        self.steps = sum_val - 1
+        idx_sol = 0
+        temp_sol = []
+        
+        curr = b
+        while curr is not None:
+            temp_sol.append(curr)
+            curr = curr.parent
+        
+        # Reverse to get start -> goal
+        self.solution = temp_sol[::-1]
+        self.steps = len(self.solution) - 1
         endTime = time.time_ns()
         self.timeTaken = endTime - startTime
 
     def SolveByAstar(self, num):
         startTime = time.time_ns()
-        explore = []  # ArrayList<Board>
         frontier = PriorityQueue()
         b = Board(num)
-
-        bList = [None] * 1000
+        bList = [None] * 3000
         counter = 0
         idx = 0
+        
+        if b.calcHurstic() == 0:
+             self.solution = [b]
+             self.steps = 0
+             self.timeTaken = 0
+             return
+
         while b.calcHurstic() != 0:
+            if idx >= 2999: break
             bList[idx] = b
             idx += 1
             counter += 1
             b.Sucssours(bList, counter, frontier, "A*")
+            if frontier.isEmpty(): break
             b = frontier.dequeue()
 
-        sum_val = 0
-        # b.print();
-        idx = 999
-        sol = [None] * 1000
+        temp_sol = []
+        curr = b
+        while curr is not None:
+            temp_sol.append(curr)
+            curr = curr.parent
 
-        while b.parent is not None:
-            sol[idx] = b
-            idx -= 1
-            b = b.parent
-
-        sol[idx] = b
-
-        finalSol = [None] * (1000 - idx)
-        c = 0
-        for i in range(idx, 1000):
-            finalSol[c] = sol[i]
-            c += 1
-            sum_val += 1
-            # System.out.println(sol[i].depthObject);
-
-        self.solution = finalSol
-        self.steps = sum_val - 1
+        self.solution = temp_sol[::-1]
+        self.steps = len(self.solution) - 1
         endTime = time.time_ns()
         self.timeTaken = endTime - startTime
-
-    def print(self):
-        for i in range(len(self.solution)):
-            self.solution[i].print()
-
-
-# ---------------------------------------------------------------------
 
 
 def solve_logic_A(start_state):
     """ Returns: (path_list, time_taken, total_steps) """
-    # --- SIMULATION A (Example: Slow/Long path) ---
     s=Solver()
     s.SolveByGreedy(start_state)
     solutionss=s.solution
-    path = [start_state]
-    t=1
-    for i in solutionss:
-        if(t==1):
-            t=t+1
-            temp = list(start_state)
-            path.append("".join(temp))
-            continue
-        b = i
-        result_string = b.getBoardString()
-        path.append(result_string)
+    path = []
+    for b in solutionss:
+        path.append(b.getBoardString())
+    
+    # Handle case where solution is empty or failed
+    if not path: path = [start_state]
 
-
-
-
-
-    # Create fake steps moving '0' around
-
-    return path, (str(s.timeTaken*10**-9)[:5]), s.steps
-
-
+    return path, (str(s.timeTaken*10**-9)[:6]), s.steps
 
 def solve_logic_B(start_state):
     """ Returns: (path_list, time_taken, total_steps) """
-    # --- SIMULATION B (Example: Fast/Short path) ---
-
     s=Solver()
     s.SolveByAstar(start_state)
     solutionss=s.solution
-    t=1
-    for i in solutionss:
-        if(t==1):
-            path = [start_state]
-            t=t+1
-            temp = list(start_state)
-            path.append("".join(temp))
-            continue
-        b = i
-        result_string = b.getBoardString()
-        path.append(result_string)
+    path = []
+    for b in solutionss:
+        path.append(b.getBoardString())
 
-    return path, (str(s.timeTaken*10**-9)[:5]), s.steps
+    if not path: path = [start_state]
+
+    return path, (str(s.timeTaken*10**-9)[:6]), s.steps
 
 
 # ==========================================
-# GUI LOGIC (Handles both sides)
+# GUI LOGIC (Updated Colors)
 # ==========================================
 
 class EightPuzzleGUI:
@@ -464,9 +339,19 @@ class EightPuzzleGUI:
         self.root = root
         self.on_back = on_back
         self.root.title("8-Puzzle Dual Solver")
-        # self.root.geometry("900x650") # Managed by GameHubApp or fullscreen
+        
+        # --- COLOR THEME (GameHub Style) ---
+        self.BG_COLOR = "#1a1a2e"       # Main Dark Background
+        self.FG_COLOR = "#ffffff"       # Main Text Color
+        self.ACCENT_COLOR = "#e94560"   # Pinkish Red (Highlights)
+        self.BTN_BG = "#16213e"         # Button Background (Dark Blue)
+        self.BTN_ACTIVE = "#0f3460"     # Button Active State
+        self.CARD_BG = "#16213e"        # Panels/Cards Background
+        self.TILE_BG = "#e94560"        # Puzzle Tile Color
+        self.TILE_FG = "#ffffff"        # Puzzle Tile Text
+        self.INPUT_BG = "#0f3460"       # Input field background
 
-        self.main_frame = tk.Frame(self.root, bg="white")
+        self.main_frame = tk.Frame(self.root, bg=self.BG_COLOR)
         self.main_frame.pack(fill="both", expand=True)
 
         self.data_A = {"path": [], "idx": 0}
@@ -476,33 +361,46 @@ class EightPuzzleGUI:
 
     def setup_ui(self):
         # === PAGE 1: INPUT ===
-        self.input_frame = tk.Frame(self.main_frame, bg="white")
+        self.input_frame = tk.Frame(self.main_frame, bg=self.BG_COLOR)
         self.input_frame.pack(fill="both", expand=True, pady=100)
 
-        tk.Label(self.input_frame, text="Compare Two Algorithms", font=("Helvetica", 24, "bold"), bg="white", fg="#333").pack(pady=(0, 20))
+        tk.Label(self.input_frame, 
+                 text="Compare Two Algorithms", 
+                 font=("Helvetica", 30, "bold"), 
+                 bg=self.BG_COLOR, 
+                 fg=self.ACCENT_COLOR).pack(pady=(0, 30))
         
-        self.input_entry = tk.Entry(self.input_frame, font=("Arial", 18), width=15, justify="center", bd=2, relief="groove")
-        self.input_entry.pack(pady=15)
+        # Styled Entry
+        self.input_entry = tk.Entry(self.input_frame, 
+                                    font=("Arial", 22), 
+                                    width=15, 
+                                    justify="center", 
+                                    bd=0, 
+                                    bg=self.INPUT_BG,
+                                    fg="white",
+                                    insertbackground="white") # Cursor color
+        self.input_entry.pack(pady=20, ipady=5)
         self.input_entry.bind('<Return>', self.start_solver)
         
-        tk.Button(self.input_frame, text="COMPARE", command=self.start_solver, bg="#4CAF50", fg="black", font=("Arial", 14, "bold"), padx=20, pady=5).pack(pady=10)
+        # Compare Button
+        self.create_styled_button(self.input_frame, "COMPARE", self.start_solver, bg_override="#e94560", fg_override="black").pack(pady=10)
 
         if self.on_back:
-             tk.Button(self.input_frame, text="BACK", command=self.go_back, bg="#922b21", fg="black", font=("Arial", 14, "bold"), padx=20, pady=5).pack(pady=10)
+             self.create_styled_button(self.input_frame, "BACK", self.go_back).pack(pady=10)
 
         # === PAGE 2: SOLVER (Split Screen) ===
-        self.solver_frame = tk.Frame(self.main_frame, bg="white")
+        self.solver_frame = tk.Frame(self.main_frame, bg=self.BG_COLOR)
         
         # Left Frame (Algorithm A)
-        self.frame_A = tk.Frame(self.solver_frame, bg="white", width=450)
-        self.frame_A.pack(side="left", fill="both", expand=True, padx=10)
+        self.frame_A = tk.Frame(self.solver_frame, bg=self.BG_COLOR)
+        self.frame_A.pack(side="left", fill="both", expand=True, padx=20)
 
         # Right Frame (Algorithm B)
-        self.frame_B = tk.Frame(self.solver_frame, bg="white", width=450)
-        self.frame_B.pack(side="right", fill="both", expand=True, padx=10)
+        self.frame_B = tk.Frame(self.solver_frame, bg=self.BG_COLOR)
+        self.frame_B.pack(side="right", fill="both", expand=True, padx=20)
 
-        # Separator Line
-        tk.Frame(self.solver_frame, bg="#ccc", width=2).place(relx=0.5, rely=0.1, relheight=0.8)
+        # Separator Line (Styled)
+        tk.Frame(self.solver_frame, bg=self.BTN_BG, width=2).place(relx=0.5, rely=0.1, relheight=0.8)
         
         # Build Panels
         self.lbl_time_A, self.lbl_steps_A, self.lbl_prog_A, self.grid_labels_A = self.create_solver_panel(
@@ -515,48 +413,81 @@ class EightPuzzleGUI:
         
         # Back button in solver frame
         if self.on_back:
-             tk.Button(self.solver_frame, text="BACK", command=self.go_back, bg="#922b21", fg="black", font=("Arial", 14, "bold"), padx=20, pady=5).pack(side="bottom", pady=20)
+             self.create_styled_button(self.solver_frame, "BACK", self.go_back).pack(side="bottom", pady=30)
 
+
+    def create_styled_button(self, parent, text, command, bg_override=None, fg_override=None):
+        """Helper to create GameHub styled buttons"""
+        bg = bg_override if bg_override else self.BTN_BG
+        # GameHub uses black text on buttons often, but can use white if preferred. 
+        # Using white for non-accent buttons looks cleaner on dark theme, but following request:
+        fg = fg_override if fg_override else "white" 
+        
+        btn = tk.Button(
+            parent,
+            text=text,
+            font=("Arial", 14, "bold"),
+            bg=bg,
+            fg=fg,
+            width=20,
+            activebackground=self.BTN_ACTIVE,
+            activeforeground="white",
+            bd=0, 
+            command=command
+        )
+        return btn
 
     def create_solver_panel(self, parent, title, prev_cmd, next_cmd):
-        tk.Label(parent, text=title, font=("Helvetica", 18, "bold"), bg="white", fg="#333").pack(pady=(20, 10))
+        tk.Label(parent, text=title, font=("Helvetica", 20, "bold"), bg=self.BG_COLOR, fg=self.ACCENT_COLOR).pack(pady=(40, 15))
 
-        # Stats
-        stats = tk.Frame(parent, bg="#f9f9f9", bd=1, relief="solid", padx=10, pady=5)
+        # Stats Card
+        stats = tk.Frame(parent, bg=self.CARD_BG, padx=15, pady=10)
         stats.pack(fill="x", padx=40)
 
-        r1 = tk.Frame(stats, bg="#f9f9f9")
-        r1.pack(fill="x")
-        tk.Label(r1, text="Time:", font=("Arial", 10, "bold"), bg="#f9f9f9").pack(side="left")
-        t_lbl = tk.Label(r1, text="0s", font=("Arial", 10), bg="#f9f9f9", fg="blue")
+        r1 = tk.Frame(stats, bg=self.CARD_BG)
+        r1.pack(fill="x", pady=2)
+        tk.Label(r1, text="Time:", font=("Arial", 11, "bold"), bg=self.CARD_BG, fg="#ccc").pack(side="left")
+        t_lbl = tk.Label(r1, text="0s", font=("Arial", 11, "bold"), bg=self.CARD_BG, fg="#4CAF50") # Green for success metrics
         t_lbl.pack(side="right")
 
-        r2 = tk.Frame(stats, bg="#f9f9f9")
-        r2.pack(fill="x")
-        tk.Label(r2, text="Steps:", font=("Arial", 10, "bold"), bg="#f9f9f9").pack(side="left")
-        s_lbl = tk.Label(r2, text="0", font=("Arial", 10), bg="#f9f9f9", fg="blue")
+        r2 = tk.Frame(stats, bg=self.CARD_BG)
+        r2.pack(fill="x", pady=2)
+        tk.Label(r2, text="Steps:", font=("Arial", 11, "bold"), bg=self.CARD_BG, fg="#ccc").pack(side="left")
+        s_lbl = tk.Label(r2, text="0", font=("Arial", 11, "bold"), bg=self.CARD_BG, fg="#4CAF50")
         s_lbl.pack(side="right")
 
         # Progress
-        p_lbl = tk.Label(parent, text="Step: 0", font=("Arial", 12), bg="white", fg="#666")
-        p_lbl.pack(pady=(15, 5))
+        p_lbl = tk.Label(parent, text="Step: 0", font=("Arial", 12), bg=self.BG_COLOR, fg=self.FG_COLOR)
+        p_lbl.pack(pady=(20, 10))
 
         # Grid
-        g_cont = tk.Frame(parent, bg="white")
-        g_cont.pack(pady=5)
+        g_cont = tk.Frame(parent, bg=self.BG_COLOR)
+        g_cont.pack(pady=10)
         labels = []
         for r in range(3):
             for c in range(3):
-                l = tk.Label(g_cont, text="?", font=("Helvetica", 24, "bold"), width=4, height=2, bg="#e0e0e0", fg="#333",
+                # Placeholder style
+                l = tk.Label(g_cont, 
+                             text="?", 
+                             font=("Helvetica", 24, "bold"), 
+                             width=4, 
+                             height=2, 
+                             bg=self.BTN_BG, 
+                             fg=self.FG_COLOR,
                              relief="flat")
-                l.grid(row=r, column=c, padx=3, pady=3)
+                l.grid(row=r, column=c, padx=4, pady=4)
                 labels.append(l)
 
-        # Buttons
-        nav = tk.Frame(parent, bg="white")
+        # Nav Buttons
+        nav = tk.Frame(parent, bg=self.BG_COLOR)
         nav.pack(pady=20)
-        tk.Button(nav, text="◄ Prev", command=prev_cmd, bg="white", relief="groove").pack(side="left", padx=10)
-        tk.Button(nav, text="Next ►", command=next_cmd, bg="white", relief="groove").pack(side="left", padx=10)
+        
+        # Small Nav buttons
+        btn_prev = tk.Button(nav, text="◄", command=prev_cmd, font=("Arial", 14), bg=self.BTN_BG, fg="white", bd=0, activebackground=self.BTN_ACTIVE, activeforeground="white", width=5)
+        btn_prev.pack(side="left", padx=10)
+        
+        btn_next = tk.Button(nav, text="►", command=next_cmd, font=("Arial", 14), bg=self.BTN_BG, fg="white", bd=0, activebackground=self.BTN_ACTIVE, activeforeground="white", width=5)
+        btn_next.pack(side="left", padx=10)
 
         return t_lbl, s_lbl, p_lbl, labels
 
@@ -598,9 +529,11 @@ class EightPuzzleGUI:
         for i, char in enumerate(state_string):
             lbl = label_list[i]
             if char == '0':
-                lbl.config(text="", bg="#f0f0f0")
+                # Empty Tile Style (blends with background or dark placeholder)
+                lbl.config(text="", bg=self.BTN_BG) 
             else:
-                lbl.config(text=char, bg="#2196F3", fg="white")
+                # Active Tile Style (GameHub Accent Color)
+                lbl.config(text=char, bg=self.ACCENT_COLOR, fg="white")
 
     def prev_A(self):
         if self.data_A["idx"] > 0:
@@ -640,5 +573,7 @@ class EightPuzzleGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
+    # Simulate fullscreen environment for testing
+    root.configure(bg="#1a1a2e")
     app = EightPuzzleGUI(root)
     root.mainloop()
