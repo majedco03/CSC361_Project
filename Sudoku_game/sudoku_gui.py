@@ -5,7 +5,6 @@ import threading
 import sys
 import os
 
-# Add current directory to path so imports work when running from root
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from sudoku_game import SudokuGame
@@ -45,8 +44,8 @@ class SudokuGUI:
         
         style.configure(
             "Dark.TCombobox",
-            fieldbackground="#0f3460",   # main box background
-            background="#0f3460",        # dropdown button background
+            fieldbackground="#0f3460", 
+            background="#0f3460",   
             foreground="white",
             bordercolor="#FFFFFF",
             lightcolor="#102036",
@@ -60,7 +59,6 @@ class SudokuGUI:
             foreground=[("readonly", "white")]
         )
 
-        # --- Row 1: Difficulty ---
         top_controls = tk.Frame(control_frame, bg="#1a1a2e")
         top_controls.pack(fill=tk.X, pady=(0, 5))
 
@@ -75,7 +73,6 @@ class SudokuGUI:
                      style="Dark.TCombobox"
                      ).pack(side=tk.LEFT, padx=10)
 
-        # --- Row 2: Algorithm Selector ---
         algo_frame = tk.Frame(control_frame, bg="#1a1a2e")
         algo_frame.pack(fill=tk.X, pady=(0, 10))
 
@@ -97,13 +94,11 @@ class SudokuGUI:
         self.time_label = tk.Label(algo_frame, text="0.00s", font=("Courier", 16, "bold"), bg="#1a1a2e", fg="#ffffff")
         self.time_label.pack(side=tk.RIGHT)
 
-        # --- Row 3: Stats ---
         stats_frame = tk.Frame(control_frame, bg="#1a1a2e", pady=5)
         stats_frame.pack(fill=tk.X, pady=(0, 10))
         self.stats_label = tk.Label(stats_frame, text="Steps: 0  |  Backtracks: 0", font=("Courier", 14), bg="#1D1D49", fg="#FFFFFF")
         self.stats_label.pack()
 
-        # --- Row 4: Buttons ---
         btn_frame = tk.Frame(control_frame, bg="#1a1a2e")
         btn_frame.pack(fill=tk.X)
 
@@ -122,7 +117,6 @@ class SudokuGUI:
         self.btn_clear = tk.Button(btn_frame, text="Reset", command=self.reset_board, bg="#FF9800", fg="black", font=self.btn_font, relief="flat", padx=10, pady=5)
         self.btn_clear.pack(side=tk.RIGHT, padx=5)
 
-        # --- Grid ---
         self.grid_wrapper = tk.Frame(self.main_frame, bg="#444", padx=4, pady=4)
         self.grid_wrapper.pack()
         self.grid_frame = tk.Frame(self.grid_wrapper, bg="#444")
@@ -183,7 +177,6 @@ class SudokuGUI:
             messagebox.showerror("Error", f"Error: {e}")
 
     def solve_puzzle(self):
-        # Sync inputs
         for r in range(9):
             for c in range(9):
                 if (r, c) in self.generated_cells: continue
@@ -199,7 +192,6 @@ class SudokuGUI:
 
         start_time = time.perf_counter()
         
-        # Select Generator
         if "Smart" in algo_choice:
             solver = self.game.solve_csp_generator() 
         elif "Naive" in algo_choice:
@@ -214,18 +206,16 @@ class SudokuGUI:
             while True:
                 step = next(solver)
                 row, col, val, metric1, metric2 = step
-                # metric1 = steps, metric2 = backtracks OR cost (for annealing)
                 
                 step_counter += 1
                 
-                # Update GUI logic
                 if "Annealing" in algo_choice:
                     self.stats_label.config(text=f"Iteration: {metric1}  |  Cost/Errors: {metric2}")
                     if row != -1: # -1 indicates just a cost update
                         cell = self.cells[(row, col)]
                         cell.delete(0, tk.END)
                         cell.insert(0, str(val))
-                        cell.config(bg="#E1BEE7") # Purple for annealing
+                        cell.config(bg="#E1BEE7")
                 else:
                     self.stats_label.config(text=f"Steps: {metric1}  |  Backtracks: {metric2}")
                     cell = self.cells[(row, col)]
@@ -236,24 +226,23 @@ class SudokuGUI:
                     else:
                         cell.config(bg="#FFCDD2") 
 
-                # Speed control
                 if "Naive" in algo_choice and step_counter % 5 != 0: pass
                 elif "Annealing" in algo_choice and step_counter % 20 != 0: pass
                 else: self.root.update_idletasks()
 
         except StopIteration as e:
-            solved = e.value # Usually True for Annealing if it breaks
+            solved = e.value
 
         end_time = time.perf_counter()
         duration = end_time - start_time
 
         if solved or "Annealing" in algo_choice:
-            if "Annealing" not in algo_choice: # CSP cleanup
+            if "Annealing" not in algo_choice:
                 for r in range(9):
                     for c in range(9):
                         if (r, c) not in self.generated_cells:
                             self.cells[(r, c)].config(bg="#C8E6C9", fg="#2E7D32") 
-            else: # Annealing Cleanup (refresh board from memory to ensure green)
+            else: 
                 self.update_gui_from_board()
                 for r in range(9):
                     for c in range(9):
@@ -266,7 +255,7 @@ class SudokuGUI:
             self.status_label.config(text="No solution found / Stuck.")
             messagebox.showwarning("Result", "Solver stopped or could not find solution.")
 
-    # --- ANALYSIS WINDOW ---
+    
     def open_analysis_window(self):
         win = tk.Toplevel(self.root)
         win.title("Algorithm Performance Analysis")
