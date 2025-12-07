@@ -4,7 +4,6 @@ import math
 import time
 import statistics
 
-# Check for numpy (Required for the SA algorithm)
 try:
     import numpy as np
     NUMPY_AVAILABLE = True
@@ -12,10 +11,6 @@ except ImportError:
     NUMPY_AVAILABLE = False
 
 class SudokuGame:
-    """
-    Handles Game Logic.
-    Now includes a FIXED version of the user's Simulated Annealing.
-    """
     def __init__(self): 
         self.board = [[0 for _ in range(9)] for _ in range(9)]
         self.original_board = [] 
@@ -77,8 +72,8 @@ class SudokuGame:
                             board[i][j] = 0
                     return False
         return True
+
     
-    # --- CSP HELPER FUNCTIONS ---
     def is_safe(self, board, row, col, num):
         for x in range(9):
             if board[row][x] == num: return False
@@ -110,7 +105,6 @@ class SudokuGame:
                         if min_count <= 1: return mrv_cell
         return mrv_cell
 
-    # --- ALGORITHM 1: NAIVE BACKTRACKING ---
     def solve_naive_generator(self):
         empty_spot = self.find_empty_naive(self.board)
         if not empty_spot: return True
@@ -127,7 +121,6 @@ class SudokuGame:
                 yield (row, col, 0, self.steps, self.backtracks)
         return False
 
-    # --- ALGORITHM 2: SMART CSP (MRV) ---
     def solve_csp_generator(self):
         empty_spot = self.find_mrv_cell(self.board)
         if not empty_spot: return True
@@ -143,10 +136,7 @@ class SudokuGame:
                 self.backtracks += 1
                 yield (row, col, 0, self.steps, self.backtracks)
         return False
-
-    # =================================================================
-    # --- ALGORITHM 3: SIMULATED ANNEALING 
-    # =================================================================
+        
 
     def CreateList3x3Blocks(self):
         finalListOfBlocks = []
@@ -164,7 +154,6 @@ class SudokuGame:
         for block in listOfBlocks:
             for box in block:
                 if sudoku[box[0],box[1]] == 0:
-                    # Identify existing numbers in this block to avoid duplicates
                     existing = []
                     for r_i in range(block[0][0], block[-1][0]+1):
                         for c_i in range(block[0][1], block[-1][1]+1):
@@ -189,11 +178,9 @@ class SudokuGame:
         return(numberOfErrors)
 
     def TwoRandomBoxesWithinBlock(self, fixedSudoku, block):
-        # Safety: Ensure there are at least 2 mutable cells to swap
         mutable_boxes = [box for box in block if fixedSudoku[box[0], box[1]] != 1]
         
         if len(mutable_boxes) < 2:
-            # Cannot swap if less than 2 mutable cells. Return indices that won't change anything.
             return [block[0], block[0]]
 
         return random.sample(mutable_boxes, 2)
@@ -230,19 +217,13 @@ class SudokuGame:
         return numberOfItterations
 
     def solve_annealing_generator(self):
-        """
-        Runs the User's Simulated Annealing logic (Fixed).
-        Yields state updates for the GUI.
-        """
         if not NUMPY_AVAILABLE:
             print("Error: Numpy not installed. Cannot run SA.")
             return False
 
-        # 1. Setup Data Structures
         sudoku = np.array(self.board)
         fixedSudoku = np.copy(sudoku)
         
-        # Mark fixed cells (1 = fixed, 0 = mutable)
         for i in range(9):
             for j in range(9):
                 if fixedSudoku[i,j] != 0: 
@@ -252,10 +233,8 @@ class SudokuGame:
         
         listOfBlocks = self.CreateList3x3Blocks()
         
-        # 2. Random Fill (Valid 3x3 Blocks)
         tmpSudoku = self.RandomlyFill3x3Blocks(sudoku, listOfBlocks)
         
-        # Visual Sync: Update GUI with initial random state
         for r in range(9):
             for c in range(9):
                 if self.original_board[r][c] == 0:
@@ -273,19 +252,16 @@ class SudokuGame:
         stuckCount = 0
         step_count = 0
         
-        # 3. Main Loop
         while solutionFound == 0:
             previousScore = score
             
             for i in range(0, itterations):
                 step_count += 1
                 
-                # Propose New State
                 proposal = self.ProposedState(tmpSudoku, fixedSudoku, listOfBlocks)
                 newSudoku = proposal[0]
                 boxesToCheck = proposal[1]
                 
-                # Calculate Cost
                 currentCost = self.CalculateNumberOfErrorsRowColumn(boxesToCheck[0][0], boxesToCheck[0][1], tmpSudoku) + \
                               self.CalculateNumberOfErrorsRowColumn(boxesToCheck[1][0], boxesToCheck[1][1], tmpSudoku)
                 newCost = self.CalculateNumberOfErrorsRowColumn(boxesToCheck[0][0], boxesToCheck[0][1], newSudoku) + \
@@ -293,15 +269,12 @@ class SudokuGame:
                 
                 costDifference = newCost - currentCost
                 
-                # Metropolis Acceptance Criterion
                 rho = math.exp(-costDifference/sigma) if sigma > 0 else 0
                 
                 if(np.random.uniform(1,0,1) < rho):
-                    # Accept Change
                     tmpSudoku = newSudoku
                     score += costDifference
                     
-                    # Visual Sync: Update swapped cells on GUI
                     r1, c1 = boxesToCheck[0]
                     r2, c2 = boxesToCheck[1]
                     val1 = int(tmpSudoku[r1, c1])
@@ -317,13 +290,11 @@ class SudokuGame:
                         solutionFound = 1
                         break
 
-            # Cooling Schedule
             sigma *= decreaseFactor
             if score <= 0:
                 solutionFound = 1
                 break
                 
-            # Stuck Logic
             if score >= previousScore:
                 stuckCount += 1
             else:
@@ -331,12 +302,10 @@ class SudokuGame:
             if (stuckCount > 80):
                 sigma += 2
             
-            # Keep GUI alive
             yield (-1, -1, 0, step_count, score)
 
         return True
 
-    # --- BATCH ANALYSIS TOOL ---
     def run_batch_analysis(self, algorithm_name, trials=10):
         total_time = 0
         success_count = 0
