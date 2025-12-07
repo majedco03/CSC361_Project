@@ -2,11 +2,18 @@ import tkinter as tk
 from tkinter import ttk, messagebox, font
 import time
 import threading 
+import sys
+import os
+
+# Add current directory to path so imports work when running from root
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from sudoku_game import SudokuGame
 
 class SudokuGUI:
-    def __init__(self, root):
+    def __init__(self, root, on_back=None):
         self.root = root
+        self.on_back = on_back
         self.root.title("Sudoku AI Project - Final Submission")
         self.root.geometry("700x900")
         self.root.configure(bg="#1a1a2e")
@@ -22,13 +29,13 @@ class SudokuGUI:
         self.setup_ui()
 
     def setup_ui(self):
-        main_frame = tk.Frame(self.root, bg="#1a1a2e")
-        main_frame.pack(expand=True, fill="both", padx=20, pady=20)
+        self.main_frame = tk.Frame(self.root, bg="#1a1a2e")
+        self.main_frame.pack(expand=True, fill="both", padx=20, pady=20)
 
-        title_label = tk.Label(main_frame, text="Sudoku Solver", bg="#1a1a2e", fg="#e94560", font=("Helvetica", 24, "bold"))
+        title_label = tk.Label(self.main_frame, text="Sudoku Solver", bg="#1a1a2e", fg="#e94560", font=("Helvetica", 24, "bold"))
         title_label.pack(pady=(0, 10))
 
-        control_frame = tk.Frame(main_frame, bg="#1a1a2e")
+        control_frame = tk.Frame(self.main_frame, bg="#1a1a2e")
         control_frame.pack(fill=tk.X, pady=(0, 15))
         
         style = ttk.Style()
@@ -98,19 +105,23 @@ class SudokuGUI:
         btn_frame = tk.Frame(control_frame, bg="#1a1a2e")
         btn_frame.pack(fill=tk.X)
 
-        self.btn_gen = tk.Button(btn_frame, text="Generate", command=self.generate_new, bg="#2196F3", fg="white", font=self.btn_font, relief="flat", padx=10, pady=5)
+        self.btn_gen = tk.Button(btn_frame, text="Generate", command=self.generate_new, bg="#2196F3", fg="black", font=self.btn_font, relief="flat", padx=10, pady=5)
         self.btn_gen.pack(side=tk.LEFT, padx=(0, 5))
 
-        self.btn_solve = tk.Button(btn_frame, text="Start Solving", command=self.solve_puzzle, bg="#4CAF50", fg="white", font=self.btn_font, relief="flat", padx=5, pady=5)
+        self.btn_solve = tk.Button(btn_frame, text="Start Solving", command=self.solve_puzzle, bg="#4CAF50", fg="black", font=self.btn_font, relief="flat", padx=5, pady=5)
         self.btn_solve.pack(side=tk.LEFT, padx=5)
+
+        if self.on_back:
+            self.btn_back = tk.Button(btn_frame, text="Back", command=self.go_back, bg="#922b21", fg="black", font=self.btn_font, relief="flat", padx=10, pady=5)
+            self.btn_back.pack(side=tk.RIGHT, padx=5)
 
         
 
-        self.btn_clear = tk.Button(btn_frame, text="Reset", command=self.reset_board, bg="#FF9800", fg="white", font=self.btn_font, relief="flat", padx=10, pady=5)
+        self.btn_clear = tk.Button(btn_frame, text="Reset", command=self.reset_board, bg="#FF9800", fg="black", font=self.btn_font, relief="flat", padx=10, pady=5)
         self.btn_clear.pack(side=tk.RIGHT, padx=5)
 
         # --- Grid ---
-        self.grid_wrapper = tk.Frame(main_frame, bg="#444", padx=4, pady=4)
+        self.grid_wrapper = tk.Frame(self.main_frame, bg="#444", padx=4, pady=4)
         self.grid_wrapper.pack()
         self.grid_frame = tk.Frame(self.grid_wrapper, bg="#444")
         self.grid_frame.pack()
@@ -279,6 +290,12 @@ class SudokuGUI:
             
         btn = tk.Button(win, text="Start Test", command=run_tests, bg="#2196F3", fg="white")
         btn.pack(pady=5)
+
+    def go_back(self):
+        if hasattr(self, 'main_frame') and self.main_frame:
+            self.main_frame.destroy()
+        if self.on_back:
+            self.on_back()
 
 if __name__ == "__main__":
     root = tk.Tk()

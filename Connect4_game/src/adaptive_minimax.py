@@ -9,8 +9,8 @@ and collect data from the games to train a third agent using supervised learning
 
 
 my idea here will be to implement another miniMax agent but it will
-re-evaluate the heutistic function after each full game
-and adjust the weights of the heutistic function based on the game outcome
+re-evaluate the heutistic after each full game
+and adjust the weights of the heuristics based on the game outcome
 this will make the agent adapte to the opponent strategy over time
 """
 
@@ -20,8 +20,8 @@ from board import Board
 import json
 
 # Get the directory where this script is located
-_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_WEIGHTS_FILE = os.path.join(_SCRIPT_DIR, 'agent_weights.json')
+scriptDir = os.path.dirname(os.path.abspath(__file__))
+weightsFile = os.path.join(scriptDir, 'agent_weights.json')
 
 class EvolvingMinimaxAgent:
 
@@ -31,69 +31,69 @@ class EvolvingMinimaxAgent:
         # More features = more learning opportunities
         self.weights = {
             # Offensive patterns
-            'three': 100,              # 3 in a row with 1 empty
-            'two': 15,                 # 2 in a row with 2 empty
-            'two_open': 25,            # 2 in a row with empty on BOTH sides
-            'one_potential': 3,        # 1 piece with 3 empty (building potential)
+            'three': 100, # 3 in a row with 1 empty
+            'two': 15, # 2 in a row with 2 empty
+            'twoOpen': 25, # 2 in a row with empty on BOTH sides
+            'onePotential': 3, # 1 piece with 3 empty (building potential)
             
             # Defensive patterns (negative values)
-            'opp_three': -120,         # Block opponent's 3
-            'opp_two': -20,            # Block opponent's 2
-            'opp_two_open': -35,       # Open 2s are more dangerous
+            'oppThree': -120, # Block opponent's 3
+            'oppTwo': -20, # Block opponent's 2
+            'oppTwoOpen': -35, # Open 2s are more dangerous
             
             # Positional weights
-            'center': 5,               # Center column control
-            'center_adjacent': 3,      # Columns adjacent to center
-            'bottom_row': 4,           # Control of bottom row
-            'height_penalty': -2,      # Penalty for pieces too high (less stable)
+            'center': 5, # Center column control
+            'centerAdjacent': 3, # Columns adjacent to center
+            'bottomRow': 4, # Control of bottom row
+            'heightPenalty': -2, # Penalty for pieces too high (less stable)
             
             # Structural patterns
-            'double_threat': 80,       # Two ways to win
-            'blocked_three': -10,      # Our 3 that's blocked on both sides
-            'trap_setup': 40,          # Setting up unavoidable wins
+            'doubleThreat': 80, # Two ways to win
+            'blockedThree': -10,  # Our 3 that's blocked on both sides
+            'trapSetup': 40, # Setting up unavoidable wins
             
             # Tempo and mobility
-            'mobility': 2,             # Number of valid moves available
-            'threat_count': 15,        # Total number of threats we have
-            'opp_threat_count': -20,   # Total threats opponent has
+            'mobility': 2, # Number of valid moves available
+            'threatCount': 15, # Total number of threats we have
+            'oppThreatCount': -20, # Total threats opponent has
             
             # Edge control
-            'edge_penalty': -1,        # Slight penalty for edge columns
+            'edgePenalty': -1, # Slight penalty for edge columns
         }
-        self.last_game_boards = []
-        self.last_game_result = 0
+        self.lastGameBoards = []
+        self.lastGameResult = 0
         self.depth = 6
-        self.load_weights()
+        self.loadWeights()
 
     def evaluateWindow(self, window, player):
         # same approach as regular minimax but with a high more detailed scoring
         score = 0
         opponent = 3 - player
-        player_count = window.count(player)
-        opp_count = window.count(opponent)
-        empty_count = window.count(0)
+        playerCount = window.count(player)
+        oppCount = window.count(opponent)
+        emptyCount = window.count(0)
         
         # Only evaluate if window is not mixed (contains only one player's pieces + empty)
-        if player_count > 0 and opp_count > 0:
+        if playerCount > 0 and oppCount > 0:
             return 0  # Blocked window, no value
         
         # Offensive patterns
-        if player_count == 4:
+        if playerCount == 4:
             score += 10000  # Winning!
-        elif player_count == 3 and empty_count == 1:
+        elif playerCount == 3 and emptyCount == 1:
             score += self.weights['three']
-        elif player_count == 2 and empty_count == 2:
+        elif playerCount == 2 and emptyCount == 2:
             score += self.weights['two']
-        elif player_count == 1 and empty_count == 3:
-            score += self.weights['one_potential']
+        elif playerCount == 1 and emptyCount == 3:
+            score += self.weights['onePotential']
         
         # Defensive patterns
-        if opp_count == 4:
+        if oppCount == 4:
             score -= 10000  # Opponent wins
-        elif opp_count == 3 and empty_count == 1:
-            score += self.weights['opp_three']  # Already negative
-        elif opp_count == 2 and empty_count == 2:
-            score += self.weights['opp_two']
+        elif oppCount == 3 and emptyCount == 1:
+            score += self.weights['oppThree']  # Already negative
+        elif oppCount == 2 and emptyCount == 2:
+            score += self.weights['oppTwo']
         
         return score
 
@@ -105,87 +105,87 @@ class EvolvingMinimaxAgent:
         # positional evaluations
         
         # Center column control (most important column)
-        center_col = board.cols // 2
+        centerCol = board.cols // 2
         for r in range(board.rows):
-            if board.board[r][center_col] == player:
+            if board.board[r][centerCol] == player:
                 score += self.weights['center']
-            elif board.board[r][center_col] == opponent:
+            elif board.board[r][centerCol] == opponent:
                 score -= self.weights['center']
         
         # Adjacent to center columns
-        for adj_col in [center_col - 1, center_col + 1]:
-            if 0 <= adj_col < board.cols:
+        for adjCol in [centerCol - 1, centerCol + 1]:
+            if 0 <= adjCol < board.cols:
                 for r in range(board.rows):
-                    if board.board[r][adj_col] == player:
-                        score += self.weights['center_adjacent']
-                    elif board.board[r][adj_col] == opponent:
-                        score -= self.weights['center_adjacent']
+                    if board.board[r][adjCol] == player:
+                        score += self.weights['centerAdjacent']
+                    elif board.board[r][adjCol] == opponent:
+                        score -= self.weights['centerAdjacent']
         
         # Bottom row control (foundation)
-        bottom_row = board.rows - 1
+        bottomRow = board.rows - 1
         for c in range(board.cols):
-            if board.board[bottom_row][c] == player:
-                score += self.weights['bottom_row']
-            elif board.board[bottom_row][c] == opponent:
-                score -= self.weights['bottom_row']
+            if board.board[bottomRow][c] == player:
+                score += self.weights['bottomRow']
+            elif board.board[bottomRow][c] == opponent:
+                score -= self.weights['bottomRow']
         
         # Height penalty (pieces high up are less stable)
         for r in range(board.rows):
-            height_factor = (board.rows - 1 - r) / board.rows  # 0 at bottom, ~1 at top
+            heightFactor = (board.rows - 1 - r) / board.rows  # 0 at bottom, ~1 at top
             for c in range(board.cols):
                 if board.board[r][c] == player:
-                    score += self.weights['height_penalty'] * height_factor
+                    score += self.weights['heightPenalty'] * heightFactor
                 elif board.board[r][c] == opponent:
-                    score -= self.weights['height_penalty'] * height_factor
+                    score -= self.weights['heightPenalty'] * heightFactor
         
         # Edge column penalty
         for r in range(board.rows):
             if board.board[r][0] == player or board.board[r][board.cols-1] == player:
-                score += self.weights['edge_penalty']
+                score += self.weights['edgePenalty']
             if board.board[r][0] == opponent or board.board[r][board.cols-1] == opponent:
-                score -= self.weights['edge_penalty']
+                score -= self.weights['edgePenalty']
         
         # pattern evaluations with strategic bonuses
         
-        my_threats = 0
-        opp_threats = 0
-        my_open_twos = 0
-        opp_open_twos = 0
+        myThreats = 0
+        oppThreats = 0
+        myOpenTwos = 0
+        oppOpenTwos = 0
         
         # Horizontal patterns
         for r in range(board.rows):
-            row_array = [board.board[r][c] for c in range(board.cols)]
+            rowArray = [board.board[r][c] for c in range(board.cols)]
             for c in range(board.cols - 3):
-                window = row_array[c:c + 4]
+                window = rowArray[c:c + 4]
                 score += self.evaluateWindow(window, player)
                 
                 # Count threats
                 if window.count(player) == 3 and window.count(0) == 1:
-                    my_threats += 1
+                    myThreats += 1
                 if window.count(opponent) == 3 and window.count(0) == 1:
-                    opp_threats += 1
+                    oppThreats += 1
                 
                 # Detect open twos (empty on both ends)
                 if window.count(player) == 2 and window.count(0) == 2:
                     if c > 0 and c + 4 < board.cols:
-                        if row_array[c-1] == 0 and row_array[c+4] == 0:
-                            my_open_twos += 1
+                        if rowArray[c-1] == 0 and rowArray[c+4] == 0:
+                            myOpenTwos += 1
                 if window.count(opponent) == 2 and window.count(0) == 2:
                     if c > 0 and c + 4 < board.cols:
-                        if row_array[c-1] == 0 and row_array[c+4] == 0:
-                            opp_open_twos += 1
+                        if rowArray[c-1] == 0 and rowArray[c+4] == 0:
+                            oppOpenTwos += 1
         
         # Vertical patterns
         for c in range(board.cols):
-            col_array = [board.board[r][c] for r in range(board.rows)]
+            colArray = [board.board[r][c] for r in range(board.rows)]
             for r in range(board.rows - 3):
-                window = col_array[r:r + 4]
+                window = colArray[r:r + 4]
                 score += self.evaluateWindow(window, player)
                 
                 if window.count(player) == 3 and window.count(0) == 1:
-                    my_threats += 1
+                    myThreats += 1
                 if window.count(opponent) == 3 and window.count(0) == 1:
-                    opp_threats += 1
+                    oppThreats += 1
         
         # Positive diagonal (bottom-left to top-right)
         for r in range(board.rows - 3):
@@ -194,9 +194,9 @@ class EvolvingMinimaxAgent:
                 score += self.evaluateWindow(window, player)
                 
                 if window.count(player) == 3 and window.count(0) == 1:
-                    my_threats += 1
+                    myThreats += 1
                 if window.count(opponent) == 3 and window.count(0) == 1:
-                    opp_threats += 1
+                    oppThreats += 1
         
         # Negative diagonal (top-left to bottom-right)
         for r in range(3, board.rows):
@@ -205,36 +205,36 @@ class EvolvingMinimaxAgent:
                 score += self.evaluateWindow(window, player)
                 
                 if window.count(player) == 3 and window.count(0) == 1:
-                    my_threats += 1
+                    myThreats += 1
                 if window.count(opponent) == 3 and window.count(0) == 1:
-                    opp_threats += 1
+                    oppThreats += 1
         
         # strategic bonuses based on pattern counts
         
         # Threat counting bonus
-        score += my_threats * self.weights['threat_count']
-        score += opp_threats * self.weights['opp_threat_count']
+        score += myThreats * self.weights['threatCount']
+        score += oppThreats * self.weights['oppThreatCount']
         
         # Open twos bonus (more dangerous than regular twos)
-        score += my_open_twos * self.weights['two_open']
-        score += opp_open_twos * self.weights['opp_two_open']
+        score += myOpenTwos * self.weights['twoOpen']
+        score += oppOpenTwos * self.weights['oppTwoOpen']
         
         # Double threat detection (having 2+ threats = likely win)
-        if my_threats >= 2:
-            score += self.weights['double_threat']
-        if opp_threats >= 2:
-            score -= self.weights['double_threat'] * 1.2  # Slightly more urgent to block
+        if myThreats >= 2:
+            score += self.weights['doubleThreat']
+        if oppThreats >= 2:
+            score -= self.weights['doubleThreat'] * 1.2  # Slightly more urgent to block
         
         # Mobility (having options is good)
-        valid_moves = len(board.getValidMoves())
-        score += valid_moves * self.weights['mobility']
+        validMoves = len(board.getValidMoves())
+        score += validMoves * self.weights['mobility']
         
         return score
     
     def result(self, board, action):
-        new_board = board.copy()
-        new_board.drop_piece(action)
-        return new_board
+        newBoard = board.copy()
+        newBoard.dropPiece(action)
+        return newBoard
     
 
     def maxValue(self, board, depth, alpha, beta, player):
@@ -283,176 +283,176 @@ class EvolvingMinimaxAgent:
                 best_action = action
         return best_action
 
-    def get_move(self, game):
+    def getMove(self, game):
         return self.alphaBetaSearch(game, self.depth)
     
     def record_game_state(self, board):
         # Store a copy of the board state
-        self.last_game_boards.append(board.copy())
+        self.lastGameBoards.append(board.copy())
 
     
     def finalize_game(self, board):
         # Determine game result
         if board.checkWinState() == self.player:
-            self.last_game_result = 1  # win
+            self.lastGameResult = 1  # win
         elif board.checkWinState() == 3 - self.player:
-            self.last_game_result = -1 # loss
+            self.lastGameResult = -1 # loss
         else:
-            self.last_game_result = 0  # draw or ongoing
-        self.adjust_weights()
-        self.save_weights()
-        self.last_game_boards = []  # Clear for next game
+            self.lastGameResult = 0  # draw or ongoing
+        self.adjustWeights()
+        self.saveWeights()
+        self.lastGameBoards = []  # Clear for next game
 
-    def adjust_weights(self):
-        if not self.last_game_boards or len(self.last_game_boards) < 2:
+    def adjustWeights(self):
+        # Analyze game statistics will give more detailed insights and help to much more effective
+        # learning from the game
+        if not self.lastGameBoards or len(self.lastGameBoards) < 2:
             return
         
         lr = 0.03  # Learning rate
         opponent = 3 - self.player
         
-        # Analyze game statistics will give more detailed insights and help to much more effective
-        # learning from the game
         stats = {
-            'my_threes': 0, 'opp_threes': 0,
-            'my_twos': 0, 'opp_twos': 0,
-            'my_open_twos': 0, 'opp_open_twos': 0,
-            'center_control': 0, 'adjacent_control': 0,
-            'bottom_control': 0, 'edge_pieces': 0,
-            'my_double_threats': 0, 'opp_double_threats': 0,
-            'avg_mobility': 0, 'high_pieces': 0,
+            'myThrees': 0, 'oppThrees': 0,
+            'myTwos': 0, 'oppTwos': 0,
+            'myOpenTwos': 0, 'oppOpenTwos': 0,
+            'centerControl': 0, 'adjacentControl': 0,
+            'bottomControl': 0, 'edgePieces': 0,
+            'myDoubleThreats': 0, 'oppDoubleThreats': 0,
+            'avgMobility': 0, 'highPieces': 0,
         }
         
         # Analyze critical positions (last portion of game)
-        critical_boards = self.last_game_boards[-min(10, len(self.last_game_boards)):]
-        center_col = 3  # For 7-column board
+        criticalBoards = self.lastGameBoards[-min(10, len(self.lastGameBoards)):]
+        centerCol = 3 
         
-        for board in critical_boards:
-            threats_this_board = 0
-            opp_threats_this_board = 0
+        for board in criticalBoards:
+            threatsThisBoard = 0
+            oppThreatsThisBoard = 0
             
             # Horizontal analysis
             for r in range(board.rows):
-                row_array = [board.board[r][c] for c in range(board.cols)]
+                rowArray = [board.board[r][c] for c in range(board.cols)]
                 for c in range(board.cols - 3):
-                    window = row_array[c:c + 4]
+                    window = rowArray[c:c + 4]
                     if window.count(self.player) == 3 and window.count(0) == 1:
-                        stats['my_threes'] += 1
-                        threats_this_board += 1
+                        stats['myThrees'] += 1
+                        threatsThisBoard += 1
                     if window.count(opponent) == 3 and window.count(0) == 1:
-                        stats['opp_threes'] += 1
-                        opp_threats_this_board += 1
+                        stats['oppThrees'] += 1
+                        oppThreatsThisBoard += 1
                     if window.count(self.player) == 2 and window.count(0) == 2:
-                        stats['my_twos'] += 1
+                        stats['myTwos'] += 1
                         # Check if open on both sides
-                        if c > 0 and c + 4 < board.cols and row_array[c-1] == 0 and row_array[c+4] == 0:
-                            stats['my_open_twos'] += 1
+                        if c > 0 and c + 4 < board.cols and rowArray[c-1] == 0 and rowArray[c+4] == 0:
+                            stats['myOpenTwos'] += 1
                     if window.count(opponent) == 2 and window.count(0) == 2:
-                        stats['opp_twos'] += 1
-                        if c > 0 and c + 4 < board.cols and row_array[c-1] == 0 and row_array[c+4] == 0:
-                            stats['opp_open_twos'] += 1
+                        stats['oppTwos'] += 1
+                        if c > 0 and c + 4 < board.cols and rowArray[c-1] == 0 and rowArray[c+4] == 0:
+                            stats['oppOpenTwos'] += 1
             
             # Vertical analysis
             for c in range(board.cols):
                 for r in range(board.rows - 3):
                     window = [board.board[r + i][c] for i in range(4)]
                     if window.count(self.player) == 3 and window.count(0) == 1:
-                        stats['my_threes'] += 1
-                        threats_this_board += 1
+                        stats['myThrees'] += 1
+                        threatsThisBoard += 1
                     if window.count(opponent) == 3 and window.count(0) == 1:
-                        stats['opp_threes'] += 1
-                        opp_threats_this_board += 1
+                        stats['oppThrees'] += 1
+                        oppThreatsThisBoard += 1
             
             # Diagonal analysis
             for r in range(board.rows - 3):
                 for c in range(board.cols - 3):
                     window = [board.board[r + i][c + i] for i in range(4)]
                     if window.count(self.player) == 3 and window.count(0) == 1:
-                        threats_this_board += 1
+                        threatsThisBoard += 1
                     if window.count(opponent) == 3 and window.count(0) == 1:
-                        opp_threats_this_board += 1
+                        oppThreatsThisBoard += 1
             
             for r in range(3, board.rows):
                 for c in range(board.cols - 3):
                     window = [board.board[r - i][c + i] for i in range(4)]
                     if window.count(self.player) == 3 and window.count(0) == 1:
-                        threats_this_board += 1
+                        threatsThisBoard += 1
                     if window.count(opponent) == 3 and window.count(0) == 1:
-                        opp_threats_this_board += 1
+                        oppThreatsThisBoard += 1
             
             # Double threat detection
-            if threats_this_board >= 2:
-                stats['my_double_threats'] += 1
-            if opp_threats_this_board >= 2:
-                stats['opp_double_threats'] += 1
+            if threatsThisBoard >= 2:
+                stats['myDoubleThreats'] += 1
+            if oppThreatsThisBoard >= 2:
+                stats['oppDoubleThreats'] += 1
             
             # Positional analysis
             for r in range(board.rows):
                 for c in range(board.cols):
                     if board.board[r][c] == self.player:
-                        if c == center_col:
-                            stats['center_control'] += 1
-                        elif c in [center_col - 1, center_col + 1]:
-                            stats['adjacent_control'] += 1
+                        if c == centerCol:
+                            stats['centerControl'] += 1
+                        elif c in [centerCol - 1, centerCol + 1]:
+                            stats['adjacentControl'] += 1
                         if r == board.rows - 1:
-                            stats['bottom_control'] += 1
+                            stats['bottomControl'] += 1
                         if c == 0 or c == board.cols - 1:
-                            stats['edge_pieces'] += 1
+                            stats['edgePieces'] += 1
                         if r < 2:  # Top two rows
-                            stats['high_pieces'] += 1
+                            stats['highPieces'] += 1
                     elif board.board[r][c] == opponent:
-                        if c == center_col:
-                            stats['center_control'] -= 1
-                        elif c in [center_col - 1, center_col + 1]:
-                            stats['adjacent_control'] -= 1
+                        if c == centerCol:
+                            stats['centerControl'] -= 1
+                        elif c in [centerCol - 1, centerCol + 1]:
+                            stats['adjacentControl'] -= 1
             
-            stats['avg_mobility'] += len(board.getValidMoves())
+            stats['avgMobility'] += len(board.getValidMoves())
         
-        stats['avg_mobility'] /= len(critical_boards)
+        stats['avgMobility'] /= len(criticalBoards)
         
         # adjust weights based on game result and stats
         
-        if self.last_game_result == 1:  # WIN
+        if self.lastGameResult == 1:  # WIN
             # boost good moves
-            if stats['my_threes'] > stats['opp_threes']:
+            if stats['myThrees'] > stats['oppThrees']:
                 self.weights['three'] *= (1 + lr)
-            if stats['my_twos'] > stats['opp_twos']:
+            if stats['myTwos'] > stats['oppTwos']:
                 self.weights['two'] *= (1 + lr * 0.7)
-            if stats['my_open_twos'] > 0:
-                self.weights['two_open'] *= (1 + lr)
-            if stats['my_double_threats'] > 0:
-                self.weights['double_threat'] *= (1 + lr)
-                self.weights['trap_setup'] *= (1 + lr * 0.5)
-            if stats['center_control'] > 0:
+            if stats['myOpenTwos'] > 0:
+                self.weights['twoOpen'] *= (1 + lr)
+            if stats['myDoubleThreats'] > 0:
+                self.weights['doubleThreat'] *= (1 + lr)
+                self.weights['trapSetup'] *= (1 + lr * 0.5)
+            if stats['centerControl'] > 0:
                 self.weights['center'] *= (1 + lr * 0.5)
-                self.weights['center_adjacent'] *= (1 + lr * 0.3)
-            if stats['bottom_control'] > 0:
-                self.weights['bottom_row'] *= (1 + lr * 0.3)
+                self.weights['centerAdjacent'] *= (1 + lr * 0.3)
+            if stats['bottomControl'] > 0:
+                self.weights['bottomRow'] *= (1 + lr * 0.3)
             
             # do not over-defend when wining
-            self.weights['opp_three'] *= (1 - lr * 0.2)
-            self.weights['opp_two'] *= (1 - lr * 0.2)
+            self.weights['oppThree'] *= (1 - lr * 0.2)
+            self.weights['oppTwo'] *= (1 - lr * 0.2)
             
-        elif self.last_game_result == -1:  # LOSS
+        elif self.lastGameResult == -1:  # LOSS
             # boost defense
-            self.weights['opp_three'] *= (1 + lr * 1.2)
-            self.weights['opp_two'] *= (1 + lr * 0.8)
-            if stats['opp_open_twos'] > stats['my_open_twos']:
-                self.weights['opp_two_open'] *= (1 + lr)
-            if stats['opp_double_threats'] > stats['my_double_threats']:
-                self.weights['double_threat'] *= (1 + lr * 0.5)
+            self.weights['oppThree'] *= (1 + lr * 1.2)
+            self.weights['oppTwo'] *= (1 + lr * 0.8)
+            if stats['oppOpenTwos'] > stats['myOpenTwos']:
+                self.weights['oppTwoOpen'] *= (1 + lr)
+            if stats['oppDoubleThreats'] > stats['myDoubleThreats']:
+                self.weights['doubleThreat'] *= (1 + lr * 0.5)
             
             # also boost offense - passive play loses
-            if stats['my_threes'] < stats['opp_threes']:
+            if stats['myThrees'] < stats['oppThrees']:
                 self.weights['three'] *= (1 + lr * 0.5)
-            if stats['center_control'] < 0:
+            if stats['centerControl'] < 0:
                 self.weights['center'] *= (1 + lr * 0.7)
-                self.weights['center_adjacent'] *= (1 + lr * 0.5)
+                self.weights['centerAdjacent'] *= (1 + lr * 0.5)
             
             # adjust positional play
-            if stats['edge_pieces'] > 3:
-                self.weights['edge_penalty'] *= (1 + lr * 0.5)  # More penalty
-            if stats['high_pieces'] > 3:
-                self.weights['height_penalty'] *= (1 + lr * 0.3)
+            if stats['edgePieces'] > 3:
+                self.weights['edgePenalty'] *= (1 + lr * 0.5)  # More penalty
+            if stats['highPieces'] > 3:
+                self.weights['heightPenalty'] *= (1 + lr * 0.3)
             
             # maintain more choices
             self.weights['mobility'] *= (1 + lr * 0.3)
@@ -460,41 +460,41 @@ class EvolvingMinimaxAgent:
         else:  # draw
             # Small adjustments toward more aggressive play
             self.weights['three'] *= (1 + lr * 0.2)
-            self.weights['threat_count'] *= (1 + lr * 0.1)
+            self.weights['threatCount'] *= (1 + lr * 0.1)
         
         # pull weights gently toward defaults
         defaults = {
-            'three': 100, 'two': 15, 'two_open': 25, 'one_potential': 3,
-            'opp_three': -120, 'opp_two': -20, 'opp_two_open': -35,
-            'center': 5, 'center_adjacent': 3, 'bottom_row': 4,
-            'height_penalty': -2, 'double_threat': 80, 'blocked_three': -10,
-            'trap_setup': 40, 'mobility': 2, 'threat_count': 15,
-            'opp_threat_count': -20, 'edge_penalty': -1
+            'three': 100, 'two': 15, 'twoOpen': 25, 'onePotential': 3,
+            'oppThree': -120, 'oppTwo': -20, 'oppTwoOpen': -35,
+            'center': 5, 'centerAdjacent': 3, 'bottomRow': 4,
+            'heightPenalty': -2, 'doubleThreat': 80, 'blockedThree': -10,
+            'trapSetup': 40, 'mobility': 2, 'threatCount': 15,
+            'oppThreatCount': -20, 'edgePenalty': -1
         }
         decay = 0.02  # gently pull toward defaults
         for key in self.weights:
             if key in defaults:
                 self.weights[key] = self.weights[key] * (1 - decay) + defaults[key] * decay
         
-        result_str = "WIN" if self.last_game_result == 1 else "LOSS" if self.last_game_result == -1 else "DRAW"
-        print(f"{result_str} | my_3s:{stats['my_threes']} opp_3s:{stats['opp_threes']} center:{stats['center_control']:+d} dbl_threats:{stats['my_double_threats']}/{stats['opp_double_threats']}")
-        print(f"  → three={self.weights['three']:.0f}, opp_three={self.weights['opp_three']:.0f}, dbl_threat={self.weights['double_threat']:.0f}")
+        resultStr = "WIN" if self.lastGameResult == 1 else "LOSS" if self.lastGameResult == -1 else "DRAW"
+        print(f"{resultStr} | my_3s:{stats['myThrees']} opp_3s:{stats['oppThrees']} center:{stats['centerControl']:+d} dbl_threats:{stats['myDoubleThreats']}/{stats['oppDoubleThreats']}")
+        print(f"  → three={self.weights['three']:.0f}, opp_three={self.weights['oppThree']:.0f}, dbl_threat={self.weights['doubleThreat']:.0f}")
 
 
-    def save_weights(self):
-        with open(_WEIGHTS_FILE, 'w') as f:
+    def saveWeights(self):
+        with open(weightsFile, 'w') as f:
             json.dump(self.weights, f, indent=2)
 
-    def load_weights(self):
+    def loadWeights(self):
         # Store defaults to merge with loaded weights
-        default_weights = self.weights.copy()
+        defaultWeights = self.weights.copy()
         try:
-            with open(_WEIGHTS_FILE, 'r') as f:
+            with open(weightsFile, 'r') as f:
                 loaded = json.load(f)
                 # Merge: use loaded values where available, keep defaults for new keys
-                for key in default_weights:
+                for key in defaultWeights:
                     if key in loaded:
                         self.weights[key] = loaded[key]
-                print(f"Loaded weights: {len(loaded)} keys found, {len(default_weights)} total keys")
+                print(f"Loaded weights: {len(loaded)} keys found, {len(defaultWeights)} total keys")
         except FileNotFoundError:
             print("No saved weights found, using defaults")  
