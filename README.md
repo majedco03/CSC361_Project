@@ -26,5 +26,4 @@ for more details about connect for read `Connect4_game/src/README.md`
 The Solver Will Provide Two Solution With Statistic And Paths A*,Greedy And User Can See Two Algorithm in One GUI And Can Compare Between Them:
 
 - **A\***
-- - **Greedy**
-دورك يالوليد هنا
+- **Greedy**
