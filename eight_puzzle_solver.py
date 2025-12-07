@@ -6,8 +6,6 @@ import time
 import math
 
 
-# ----------------------------------------------------
-
 class Node:
     def __init__(self, data, priority):
         self.data = data
@@ -15,22 +13,18 @@ class Node:
         self.next = None
 
 
-# ------------------------------------------------------------
 
 class PriorityQueue:
     def __init__(self):
         self.head = None
 
-    # Insert an element based on its priority
     def enqueue(self, data, priority):
         newNode = Node(data, priority)
 
-        # Case 1: Queue is empty or new node has higher priority than head
         if self.head is None or priority < self.head.priority:
             newNode.next = self.head
             self.head = newNode
         else:
-            # Traverse and find the correct position
             current = self.head
             while current.next is not None and current.next.priority <= priority:
                 current = current.next
@@ -38,7 +32,6 @@ class PriorityQueue:
             newNode.next = current.next
             current.next = newNode
 
-    # Remove and return the highest priority element
     def dequeue(self):
         if self.isEmpty():
             raise Exception("Priority Queue is empty")
@@ -47,17 +40,14 @@ class PriorityQueue:
         self.head = self.head.next
         return result
 
-    # Peek at the highest priority element
     def peek(self):
         if self.isEmpty():
             raise Exception("Priority Queue is empty")
         return self.head.data
 
-    # Check if the queue is empty
     def isEmpty(self):
         return self.head is None
 
-    # Print the queue (for debugging)
     def printQueue(self):
         current = self.head
         while current is not None:
@@ -74,8 +64,6 @@ class PriorityQueue:
         return False
 
 
-# ----------------------------------------------------
-
 class Board:
     depth = 0  # static variable
 
@@ -84,9 +72,7 @@ class Board:
         self.parent = None
         self.depthObject = 0
 
-        # Simulating constructor overloading based on arguments
         if isinstance(arg1, str):
-            # Board(String num)
             num = arg1
             idxPointer = 0
             for i in range(3):
@@ -99,7 +85,6 @@ class Board:
             self.depthObject = 0
 
         elif isinstance(arg1, list) and isinstance(arg2, list) and isinstance(arg3, list):
-            # Board(int [] r1,int [] r2,int [] r3)
             self.rows[0] = arg1
             self.rows[1] = arg2
             self.rows[2] = arg3
@@ -108,8 +93,6 @@ class Board:
             self.depthObject = 0
 
         else:
-            # Board()
-            # In Python lists are dynamic, but imitating initialization logic
             r1 = [0] * 3
             r2 = [0] * 3
             r3 = [0] * 3
@@ -156,7 +139,7 @@ class Board:
         possibleAdj = 0
         Blank = self.blankPos()
 
-        # corners , mid , other
+		
         if (Blank[0] == 0 or Blank[0] == 2) and (Blank[1] == 0 or Blank[1] == 2):
             corner = 1
             possibleAdj = 2
@@ -234,7 +217,7 @@ class Board:
             for j in range(3):
                 b.change(i, j, self.rows[i][j])
 
-        # b copyed
+		
         posZero = self.blankPos()
         posTarget = self.Pos(element)
         b.change(posZero[0], posZero[1], element)
@@ -263,21 +246,6 @@ class Board:
                 elif algorithm.lower() == "greedy":
                     frointer.enqueue(suc[i], suc[i].calcHurstic())
 
-    """
-     public static Board ChooseBest(Board [] boards , Board [] Dlist , int size) {
-
-		int min=boards[0].calcHurstic();
-		int idx=0;
-
-		for(int i=1;i<boards.length;i++) 
-			if(boards[i].calcHurstic()<min) {
-				min=boards[i].calcHurstic();
-				idx=i;
-			}
-
-		return boards[idx];
-	}
-    """
 
     def getBoardString(self):
         res = ""
@@ -306,8 +274,6 @@ class Board:
         return False
 
 
-
-# ------------------------------------------------------
 
 class Solver:
     def __init__(self):
@@ -349,7 +315,6 @@ class Solver:
             finalSol[c] = sol[i]
             c += 1
             sum_val += 1
-            # System.out.println(sol[i].depthObject);
 
         self.solution = finalSol
         self.steps = sum_val - 1
@@ -373,7 +338,6 @@ class Solver:
             b = frontier.dequeue()
 
         sum_val = 0
-        # b.print();
         idx = 999
         sol = [None] * 1000
 
@@ -390,7 +354,6 @@ class Solver:
             finalSol[c] = sol[i]
             c += 1
             sum_val += 1
-            # System.out.println(sol[i].depthObject);
 
         self.solution = finalSol
         self.steps = sum_val - 1
@@ -402,12 +365,8 @@ class Solver:
             self.solution[i].print()
 
 
-# ---------------------------------------------------------------------
-
 
 def solve_logic_A(start_state):
-    """ Returns: (path_list, time_taken, total_steps) """
-    # --- SIMULATION A (Example: Slow/Long path) ---
     s=Solver()
     s.SolveByGreedy(start_state)
     solutionss=s.solution
@@ -423,19 +382,11 @@ def solve_logic_A(start_state):
         result_string = b.getBoardString()
         path.append(result_string)
 
-
-
-
-
-    # Create fake steps moving '0' around
-
     return path, (str(s.timeTaken*10**-9)[:5]), s.steps
 
 
 
 def solve_logic_B(start_state):
-    """ Returns: (path_list, time_taken, total_steps) """
-    # --- SIMULATION B (Example: Fast/Short path) ---
 
     s=Solver()
     s.SolveByAstar(start_state)
@@ -455,11 +406,7 @@ def solve_logic_B(start_state):
     return path, (str(s.timeTaken*10**-9)[:5]), s.steps
 
 
-# ==========================================
-# GUI LOGIC (Handles both sides)
-# ==========================================
 
-# Variables to store state for both sides
 data_A = {"path": [], "idx": 0}
 data_B = {"path": [], "idx": 0}
 
@@ -472,35 +419,29 @@ def start_solver(event=None):
         messagebox.showerror("Error", "Please enter exactly 9 digits.")
         return
 
-    # 1. RUN ALGORITHM A
     path_a, time_a, steps_a = solve_logic_A(clean_input)
     data_A["path"] = path_a
     data_A["idx"] = 0
 
-    # Update Stats A
     lbl_time_A.config(text=f"{time_a}s")
     lbl_steps_A.config(text=str(steps_a))
     draw_grid(grid_labels_A, path_a[0])
     update_label_A()
 
-    # 2. RUN ALGORITHM B
     path_b, time_b, steps_b = solve_logic_B(clean_input)
     data_B["path"] = path_b
     data_B["idx"] = 0
 
-    # Update Stats B
     lbl_time_B.config(text=f"{time_b}s")
     lbl_steps_B.config(text=str(steps_b))
     draw_grid(grid_labels_B, path_b[0])
     update_label_B()
 
-    # 3. Switch Screen
     input_frame.pack_forget()
     solver_frame.pack(fill="both", expand=True)
 
 
 def draw_grid(label_list, state_string):
-    """ Generic function to draw ANY grid (A or B) """
     for i, char in enumerate(state_string):
         lbl = label_list[i]
         if char == '0':
@@ -509,7 +450,6 @@ def draw_grid(label_list, state_string):
             lbl.config(text=char, bg="#2196F3", fg="white")
 
 
-# --- NAVIGATION A ---
 def prev_A():
     if data_A["idx"] > 0:
         data_A["idx"] -= 1
@@ -528,7 +468,6 @@ def update_label_A():
     lbl_prog_A.config(text=f"Step: {data_A['idx']} / {len(data_A['path']) - 1}")
 
 
-# --- NAVIGATION B ---
 def prev_B():
     if data_B["idx"] > 0:
         data_B["idx"] -= 1
@@ -547,15 +486,13 @@ def update_label_B():
     lbl_prog_B.config(text=f"Step: {data_B['idx']} / {len(data_B['path']) - 1}")
 
 
-# ==========================================
-# GUI SETUP
-# ==========================================
+
 root = tk.Tk()
 root.title("8-Puzzle Dual Solver")
-root.geometry("900x650")  # Wide window for side-by-side
+root.geometry("900x650")  
 root.configure(bg="white")
 
-# === PAGE 1: INPUT ===
+
 input_frame = tk.Frame(root, bg="white")
 input_frame.pack(fill="both", expand=True, pady=100)
 
@@ -567,26 +504,26 @@ input_entry.bind('<Return>', start_solver)
 tk.Button(input_frame, text="COMPARE", command=start_solver, bg="#4CAF50", fg="white", font=("Arial", 14, "bold"),
           padx=20, pady=5).pack(pady=10)
 
-# === PAGE 2: SOLVER (Split Screen) ===
+
 solver_frame = tk.Frame(root, bg="white")
 
-# Left Frame (Algorithm A)
+
 frame_A = tk.Frame(solver_frame, bg="white", width=450)
 frame_A.pack(side="left", fill="both", expand=True, padx=10)
 
-# Right Frame (Algorithm B)
+
 frame_B = tk.Frame(solver_frame, bg="white", width=450)
 frame_B.pack(side="right", fill="both", expand=True, padx=10)
 
-# Separator Line
+
 tk.Frame(solver_frame, bg="#ccc", width=2).place(relx=0.5, rely=0.1, relheight=0.8)
 
 
-# --- Helper to build a solver panel ---
+
 def create_solver_panel(parent, title, time_lbl_var, steps_lbl_var, prog_lbl_var, prev_cmd, next_cmd):
     tk.Label(parent, text=title, font=("Helvetica", 18, "bold"), bg="white", fg="#333").pack(pady=(20, 10))
 
-    # Stats
+
     stats = tk.Frame(parent, bg="#f9f9f9", bd=1, relief="solid", padx=10, pady=5)
     stats.pack(fill="x", padx=40)
 
@@ -602,11 +539,11 @@ def create_solver_panel(parent, title, time_lbl_var, steps_lbl_var, prog_lbl_var
     s_lbl = tk.Label(r2, text="0", font=("Arial", 10), bg="#f9f9f9", fg="blue")
     s_lbl.pack(side="right")
 
-    # Progress
+
     p_lbl = tk.Label(parent, text="Step: 0", font=("Arial", 12), bg="white", fg="#666")
     p_lbl.pack(pady=(15, 5))
 
-    # Grid
+
     g_cont = tk.Frame(parent, bg="white")
     g_cont.pack(pady=5)
     labels = []
@@ -617,7 +554,7 @@ def create_solver_panel(parent, title, time_lbl_var, steps_lbl_var, prog_lbl_var
             l.grid(row=r, column=c, padx=3, pady=3)
             labels.append(l)
 
-    # Buttons
+
     nav = tk.Frame(parent, bg="white")
     nav.pack(pady=20)
     tk.Button(nav, text="◄ Prev", command=prev_cmd, bg="white", relief="groove").pack(side="left", padx=10)
@@ -626,14 +563,15 @@ def create_solver_panel(parent, title, time_lbl_var, steps_lbl_var, prog_lbl_var
     return t_lbl, s_lbl, p_lbl, labels
 
 
-# Build Left Panel (A)
+
 lbl_time_A, lbl_steps_A, lbl_prog_A, grid_labels_A = create_solver_panel(
     frame_A, "Greedy Algorithm", None, None, None, prev_A, next_A
 )
 
-# Build Right Panel (B)
+
 lbl_time_B, lbl_steps_B, lbl_prog_B, grid_labels_B = create_solver_panel(
     frame_B, "A* Algorithm", None, None, None, prev_B, next_B
 )
+
 
 root.mainloop()
