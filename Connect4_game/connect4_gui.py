@@ -11,7 +11,6 @@ from board import Board
 
 
 class Connect4Game:
-    """Game logic wrapper that's compatible with both GUI and agents"""
     def __init__(self):
         self.rows = 6
         self.cols = 7
