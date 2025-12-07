@@ -17,7 +17,7 @@ TRAINING_DEPTH = 4  # i have specified this depth to maintain a balance
 # between training quality and time
 
 class Trainer:
-    def __init__(self):
+    def __init__(self): 
         self.evolving = EvolvingMinimaxAgent(player=1)
         self.evolving.depth = TRAINING_DEPTH
 
@@ -65,7 +65,7 @@ class Trainer:
         self.evolving.player = 1
         self.evolving.save_weights()
         
-        print(f"\nTraining done in {time.time()-start:.1f}s. Data saved for supervised agent.")
+        print(f"\nTraining done in {time.time()-start:.1f}s.")
 
 if __name__ == "__main__":
     trainer = Trainer()

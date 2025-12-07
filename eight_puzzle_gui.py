@@ -20,7 +20,7 @@ class Node:
 class PriorityQueue:
     def __init__(self):
         self.head = None
-
+ 
     # Insert an element based on its priority
     def enqueue(self, data, priority):
         newNode = Node(data, priority)

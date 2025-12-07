@@ -22,7 +22,7 @@ class PriorityQueue:
         newNode = Node(data, priority)
 
         if self.head is None or priority < self.head.priority:
-            newNode.next = self.head
+            newNode.next = self.head 
             self.head = newNode
         else:
             current = self.head

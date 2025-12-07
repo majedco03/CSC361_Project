@@ -1,1 +1,19 @@
-https://github.com/majedco03/CSC361_Project.git
+# Game Hub Project
+This is our team project for CSC361 course
+
+## Descreption
+simple GUI that allows you to play with **3** Defferent games:-
+### Sudoku
+سولف شوي هنا عن السودوكو يا محمد
+
+### Connect-4 
+
+this is the classic connect-4 game with a 6*7 board that allows you to play against 2 AI agents or watch them play against each other:-
+
+- **MiniMax with Alpha-Beta Pruning**
+- **Adaptive MiniMax**
+
+for more details about connect for read `Connect4_game/src/README.md` 
+
+### 8-puzzle
+دورك يالوليد هنا

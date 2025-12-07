@@ -272,7 +272,7 @@ class EvolvingMinimaxAgent:
             beta = min(beta, v)
         return v
 
-    def alphaBetaSearch(self, board, depth):
+    def alphaBetaSearch(self, board, depth): 
         best_action = None
         best_value = -math.inf
         for action in board.getValidMoves():

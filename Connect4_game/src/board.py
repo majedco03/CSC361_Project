@@ -84,7 +84,7 @@ class Board:
     def gameOverState(self):
         return self.gameOver
     
-    def checkWinState(self):
+    def checkWinState(self): 
         for r in range(self.rows):
             for c in range(self.cols):
                 if self.board[r][c] != 0 and self.checkWin(r, c):

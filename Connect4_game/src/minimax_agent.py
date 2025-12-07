@@ -100,10 +100,10 @@ class MinimaxAgent:
                 window = [board.board[r - i][c + i] for i in range(4)]
                 score += self.evaluateWindow(window, player)
         
-        return score
+        return score 
     
     def result(self, board, action):
-        new_board = board.copy()
+        new_board = board.copy() 
         new_board.dropPiece(action)
         return new_board
     

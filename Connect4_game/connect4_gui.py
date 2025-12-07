@@ -108,7 +108,7 @@ class connect4Gui:
         self.on_back = on_back
         self.root.title("Connect 4")
         
-        self.root.attributes('-fullscreen', True)
+        self.root.attributes('-fullscreen', True) 
         self.root.configure(bg=self.colors['bgDark'])
         
         self.root.bind('<Escape>', lambda e: self.root.attributes('-fullscreen', False))

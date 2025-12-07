@@ -28,7 +28,7 @@ class GameHubApp:
         # This variable tracks the currently active frame (Menu or Game)
         self.current_frame = None
 
-        # Start by showing the menu
+        # Start by showing the menu 
         self.show_menu()
 
     def show_menu(self):

@@ -13,7 +13,7 @@ This project implements the classic **Connect 4** game with a graphical user int
 
 Players can compete against each other or against AI agents of varying difficulty levels of minimax.
 
----
+--- 
 
 ## features
 

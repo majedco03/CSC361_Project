@@ -22,7 +22,7 @@ class SudokuGUI:
         
         self.game = SudokuGame()
         self.cells = {} 
-        self.generated_cells = set()
+        self.generated_cells = set() 
         
         self.default_font = font.Font(family="Helvetica", size=12)
         self.cell_font = font.Font(family="Helvetica", size=20, weight="bold")

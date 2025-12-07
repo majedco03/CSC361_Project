@@ -16,7 +16,7 @@ class SudokuGame:
     Handles Game Logic.
     Now includes a FIXED version of the user's Simulated Annealing.
     """
-    def __init__(self):
+    def __init__(self): 
         self.board = [[0 for _ in range(9)] for _ in range(9)]
         self.original_board = [] 
         self.steps = 0      

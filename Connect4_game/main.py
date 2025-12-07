@@ -9,4 +9,4 @@ class Connect4App:
         root.mainloop()
 
 if __name__ == "__main__":
-    Connect4App()
+    Connect4App() 
